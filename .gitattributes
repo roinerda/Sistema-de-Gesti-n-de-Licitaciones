@@ -1,0 +1,21 @@
+# Normaliza los finales de línea: el repositorio guarda LF y cada sistema
+# operativo obtiene el final de línea que le corresponde al trabajar.
+* text=auto
+
+*.cs text diff=csharp
+*.csproj text
+*.sln text eol=crlf
+*.props text
+*.targets text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.cshtml text
+*.css text
+*.js text
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
