@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Capa de aplicación: casos de uso, DTO, validaciones de coordinación y puertos hacia la
+    infraestructura. Solo depende del dominio y de las abstracciones de inyección de dependencias.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Licitaciones.Application</RootNamespace>
+    <AssemblyName>Licitaciones.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Licitaciones.Domain\Licitaciones.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+</Project>
