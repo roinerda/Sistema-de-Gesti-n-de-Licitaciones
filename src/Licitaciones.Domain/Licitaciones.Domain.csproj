@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Capa de dominio: entidades, reglas de negocio y contratos centrales.
+    No declara ninguna dependencia externa a propósito: el dominio no debe conocer
+    infraestructura, ASP.NET Core ni Entity Framework Core.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Licitaciones.Domain</RootNamespace>
+    <AssemblyName>Licitaciones.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>
