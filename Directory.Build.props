@@ -1,0 +1,32 @@
+<Project>
+
+  <!--
+    Propiedades compartidas por todos los proyectos de la solución.
+    Centralizarlas evita divergencias de configuración entre módulos y mantiene
+    el estándar de código uniforme exigido por Extreme Programming.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- La cultura es-CR se usa para el formato monetario, por lo que no se puede globalizar de forma invariante. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- Análisis estático de .NET habilitado en toda la solución. -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+
+    <!-- Documentación XML: se genera para todos los ensamblados. CS1591 se silencia porque
+         la documentación se exige en tipos y miembros relevantes, no en cada propiedad de DTO. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <Deterministic>true</Deterministic>
+    <NeutralLanguage>es-CR</NeutralLanguage>
+  </PropertyGroup>
+
+</Project>

@@ -1,23 +1,55 @@
-### AL ###
-#Template for AL projects for Dynamics 365 Business Central
-#launch.json folder
-.vscode/
-#Cache folder
-.alcache/
-#Symbols folder
-.alpackages/
-#Snapshots folder
-.snapshots/
-#Testing Output folder
-.output/
-#Extension App-file
-*.app
-#Rapid Application Development File
-rad.json
-#Translation Base-file
-*.g.xlf
-#License-files
-*.bclicense
-*.flf
-#Test results file
+## Salidas de compilación .NET
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Resultados de pruebas y cobertura
+[Tt]est[Rr]esult*/
 TestResults.xml
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+cobertura*/
+
+## Playwright
+**/.playwright/
+**/playwright-report/
+**/playwright/.cache/
+**/bin/**/playwright.ps1
+
+## Herramientas y cachés
+.vs/
+.vscode/
+.idea/
+*.swp
+.dotnet/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+## Secretos y configuración local (nunca deben subirse)
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.key
+secrets.json
+k8s/app-secret.yaml
+
+## Sistema operativo
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
