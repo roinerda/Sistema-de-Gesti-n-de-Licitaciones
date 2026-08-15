@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pruebas de integración contra PostgreSQL real levantado con Testcontainers.
+    El enunciado prohíbe sustituir PostgreSQL por SQLite: estas pruebas verifican
+    índices únicos parciales, restricciones CHECK, integridad referencial y
+    concurrencia optimista, comportamientos que solo existen en el motor real.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Licitaciones.IntegrationTests</RootNamespace>
+    <AssemblyName>Licitaciones.IntegrationTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- CA2100: las sentencias CREATE/DROP DATABASE se arman con nombres generados por las
+         propias pruebas (nunca con datos externos) porque PostgreSQL no admite parámetros ahí. -->
+    <NoWarn>$(NoWarn);CA2100</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Licitaciones.Web\Licitaciones.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
