@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pruebas funcionales de extremo a extremo: un navegador real recorre la interfaz web
+    servida por Kestrel contra PostgreSQL real. Cubren los recorridos que una persona
+    usuaria hace de verdad, incluidos el cambio de moneda, el cambio de tema y la
+    confirmación previa a eliminar.
+
+    Requieren Docker (para PostgreSQL) y los navegadores de Playwright, que se instalan con:
+      pwsh tests/Licitaciones.FunctionalTests/bin/Debug/net9.0/playwright.ps1 install chromium
+  -->
+  <PropertyGroup>
+    <RootNamespace>Licitaciones.FunctionalTests</RootNamespace>
+    <AssemblyName>Licitaciones.FunctionalTests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Licitaciones.Web\Licitaciones.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

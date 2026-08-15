@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+
+  <!--
+    Configuración de cobertura compartida por la línea de comandos, el IDE y la integración continua.
+    Se ejecuta con:
+      dotnet test (opción) collect:"XPlat Code Coverage" (opción) settings coverage.runsettings
+
+    Umbrales exigidos por el enunciado (sección 12.5):
+      - Dominio y aplicación: 80 % o más.
+      - Cobertura total de la solución: 70 % o más.
+    La verificación de los umbrales la hace el flujo de integración continua sobre el informe
+    combinado, porque solo ahí se ejecutan también las pruebas de integración y las funcionales.
+  -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <SingleHit>false</SingleHit>
+          <UseSourceLink>true</UseSourceLink>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <DeterministicReport>false</DeterministicReport>
+
+          <!-- Solo se mide el código propio del sistema. -->
+          <Include>
+            [Licitaciones.Domain]*,
+            [Licitaciones.Application]*,
+            [Licitaciones.Infrastructure]*,
+            [Licitaciones.Api]*,
+            [Licitaciones.Web]*
+          </Include>
+
+          <!--
+            Se excluye el código que no contiene decisiones propias:
+            migraciones y snapshot generados por Entity Framework Core, y la instantánea del modelo.
+          -->
+          <ExcludeByFile>
+            **/Persistencia/Migraciones/*.cs
+          </ExcludeByFile>
+
+          <ExcludeByAttribute>
+            Obsolete,
+            GeneratedCodeAttribute,
+            CompilerGeneratedAttribute,
+            ExcludeFromCodeCoverageAttribute
+          </ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+
+</RunSettings>
