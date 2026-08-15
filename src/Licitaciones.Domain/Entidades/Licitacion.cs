@@ -21,8 +21,6 @@ public sealed class Licitacion : EntidadBase, IBorradoLogico
     /// <summary>Longitud máxima admitida para el título.</summary>
     public const int LongitudMaximaTitulo = 200;
 
-    private readonly List<Oferta> _ofertas = [];
-
     /// <summary>Constructor sin parámetros requerido por Entity Framework Core.</summary>
     private Licitacion()
     {
@@ -51,9 +49,6 @@ public sealed class Licitacion : EntidadBase, IBorradoLogico
 
     /// <summary>Indica si la licitación fue dada de baja lógicamente.</summary>
     public bool EstaEliminada => DeletedAt is not null;
-
-    /// <summary>Ofertas registradas para la licitación.</summary>
-    public IReadOnlyCollection<Oferta> Ofertas => _ofertas.AsReadOnly();
 
     /// <summary>
     /// Crea una licitación en estado <see cref="EstadoLicitacion.Borrador"/>.

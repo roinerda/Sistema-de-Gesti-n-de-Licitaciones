@@ -12,8 +12,6 @@ public sealed class Proveedor : EntidadBase, IBorradoLogico
     /// <summary>Longitud máxima admitida para el nombre.</summary>
     public const int LongitudMaximaNombre = 150;
 
-    private readonly List<Oferta> _ofertas = [];
-
     /// <summary>Constructor sin parámetros requerido por Entity Framework Core.</summary>
     private Proveedor()
     {
@@ -30,9 +28,6 @@ public sealed class Proveedor : EntidadBase, IBorradoLogico
 
     /// <summary>Indica si el proveedor fue dado de baja lógicamente.</summary>
     public bool EstaEliminado => DeletedAt is not null;
-
-    /// <summary>Ofertas registradas por el proveedor.</summary>
-    public IReadOnlyCollection<Oferta> Ofertas => _ofertas.AsReadOnly();
 
     /// <summary>
     /// Crea un proveedor validando el nombre.
