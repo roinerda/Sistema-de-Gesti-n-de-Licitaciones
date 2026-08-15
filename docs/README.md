@@ -101,5 +101,8 @@ docker-compose.yml
 
 ---
 
+En la raíz del repositorio está `REALIZAR.md`, que es el **enunciado del curso** conservado para
+trazabilidad. No es documentación del proyecto: toda la documentación vive en esta carpeta.
+
 Proyecto final del curso **ITI-822 · Metodologías Ágiles de Desarrollo de Software**,
 Universidad Técnica Nacional.
