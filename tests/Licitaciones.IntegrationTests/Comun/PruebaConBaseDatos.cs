@@ -11,10 +11,11 @@ namespace Licitaciones.IntegrationTests.Comun;
 /// Base de las pruebas que necesitan un esquema propio dentro del contenedor compartido.
 /// </summary>
 /// <remarks>
-/// Cada clase de prueba obtiene una base de datos recién migrada y la elimina al terminar. Así
-/// las pruebas no dependen del orden de ejecución ni arrastran datos entre sí, y los registros
-/// sembrados por las migraciones (estados, niveles y tipo de cambio inicial) están siempre
-/// presentes tal como los encontraría un despliegue nuevo.
+/// xUnit crea una instancia por cada prueba, de modo que cada prueba obtiene una base de datos
+/// recién migrada y la elimina al terminar. Así ninguna depende del orden de ejecución ni arrastra
+/// datos de otra, y los registros sembrados por las migraciones (estados, niveles y tipo de cambio
+/// inicial) están siempre presentes tal como los encontraría un despliegue nuevo. El precio es
+/// crear y migrar una base por prueba; a esta escala compensa frente a la fragilidad de compartir.
 /// </remarks>
 public abstract class PruebaConBaseDatos : IAsyncLifetime
 {

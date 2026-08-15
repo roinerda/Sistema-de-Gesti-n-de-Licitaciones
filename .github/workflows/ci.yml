@@ -99,7 +99,11 @@ jobs:
       - name: Instalar los navegadores de Playwright
         run: pwsh tests/Licitaciones.FunctionalTests/bin/Release/net9.0/playwright.ps1 install --with-deps chromium
 
+      # Las tres suites se ejecutan aunque alguna falle: interesa el cuadro completo en una
+      # sola ejecución. El paso «Bloquear» de más abajo es el que decide el resultado.
       - name: Ejecutar las pruebas unitarias
+        id: unitarias
+        continue-on-error: true
         run: |
           dotnet test tests/Licitaciones.UnitTests/Licitaciones.UnitTests.csproj \
             --configuration Release --no-build \
@@ -110,6 +114,8 @@ jobs:
       # Testcontainers usa el Docker que ya viene instalado en el ejecutor: las pruebas
       # de integración corren contra PostgreSQL real, nunca contra una base en memoria.
       - name: Ejecutar las pruebas de integración
+        id: integracion
+        continue-on-error: true
         run: |
           dotnet test tests/Licitaciones.IntegrationTests/Licitaciones.IntegrationTests.csproj \
             --configuration Release --no-build \
@@ -118,12 +124,33 @@ jobs:
             --results-directory artefactos/pruebas
 
       - name: Ejecutar las pruebas funcionales
+        id: funcionales
+        continue-on-error: true
         run: |
           dotnet test tests/Licitaciones.FunctionalTests/Licitaciones.FunctionalTests.csproj \
             --configuration Release --no-build \
             --logger "trx;LogFileName=funcionales.trx" \
             --collect:"XPlat Code Coverage" --settings coverage.runsettings \
             --results-directory artefactos/pruebas
+
+      # Los registros de una ejecución solo se descargan con autenticación, pero las
+      # anotaciones son públicas. Publicar aquí cada prueba fallida permite diagnosticar
+      # una ejecución roja sin credenciales.
+      - name: Publicar las pruebas fallidas como anotaciones
+        if: always()
+        run: python3 .github/scripts/resumir_fallos.py artefactos/pruebas
+
+      - name: Bloquear si alguna suite falló
+        if: |
+          steps.unitarias.outcome == 'failure' ||
+          steps.integracion.outcome == 'failure' ||
+          steps.funcionales.outcome == 'failure'
+        run: |
+          echo "::error::Al menos una suite de pruebas falló."
+          echo "unitarias:  ${{ steps.unitarias.outcome }}"
+          echo "integración: ${{ steps.integracion.outcome }}"
+          echo "funcionales: ${{ steps.funcionales.outcome }}"
+          exit 1
 
       - name: Combinar los informes de cobertura
         run: |

@@ -75,9 +75,11 @@ Contra **PostgreSQL 16 real**, levantado con Testcontainers usando la misma imag
 (`postgres:16-alpine`). El enunciado prohíbe sustituirlo por SQLite, y estas pruebas explican por
 qué: verifican comportamientos que SQLite no tiene.
 
-Un contenedor se comparte por toda la serie y cada clase de prueba obtiene **su propia base de datos
-recién migrada**, que se elimina al terminar. Así las pruebas no dependen del orden ni arrastran
-datos, y cada una ve exactamente lo que vería un despliegue nuevo, semillas incluidas.
+Un contenedor se comparte por toda la serie y **cada prueba** obtiene su propia base de datos recién
+migrada, que se elimina al terminar (xUnit crea una instancia de la clase por cada método de
+prueba). Así ninguna prueba depende del orden ni arrastra datos de otra, y todas ven exactamente lo
+que vería un despliegue nuevo, semillas incluidas. El precio es crear y migrar una base por prueba;
+a esta escala compensa frente a la fragilidad de compartir estado.
 
 | Clase | Qué demuestra |
 | ----- | ----- |
