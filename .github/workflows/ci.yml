@@ -1,0 +1,266 @@
+name: Integración continua
+
+# Cualquier fallo detiene la integración: el enunciado exige que la rama principal
+# solo reciba cambios que compilan, pasan las pruebas y cumplen el estándar de código.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "true"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+jobs:
+
+  # ---------------------------------------------------------------- Estándar de código
+  estandar-de-codigo:
+    name: Formato y análisis estático
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Preparar .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependencias
+        run: dotnet restore Licitaciones.sln
+
+      - name: Verificar el formato del código
+        run: dotnet format Licitaciones.sln --verify-no-changes --verbosity diagnostic
+
+      - name: Compilar con los avisos como errores
+        run: dotnet build Licitaciones.sln --configuration Release --no-restore -warnaserror
+
+  # ---------------------------------------------------------------- Dependencias
+  dependencias-vulnerables:
+    name: Revisión de dependencias
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Preparar .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependencias
+        run: dotnet restore Licitaciones.sln
+
+      - name: Buscar paquetes con vulnerabilidades conocidas
+        run: |
+          set -o pipefail
+          dotnet list Licitaciones.sln package --vulnerable --include-transitive | tee vulnerables.txt
+          if grep --quiet "has the following vulnerable packages" vulnerables.txt; then
+            echo "::error::Hay dependencias con vulnerabilidades conocidas."
+            exit 1
+          fi
+          echo "No se encontraron dependencias vulnerables."
+
+      - name: Buscar paquetes en desuso
+        continue-on-error: true
+        run: dotnet list Licitaciones.sln package --deprecated
+
+  # ---------------------------------------------------------------- Pruebas
+  pruebas:
+    name: Pruebas y cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Preparar .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependencias
+        run: dotnet restore Licitaciones.sln
+
+      - name: Compilar la solución
+        run: dotnet build Licitaciones.sln --configuration Release --no-restore
+
+      - name: Instalar los navegadores de Playwright
+        run: pwsh tests/Licitaciones.FunctionalTests/bin/Release/net9.0/playwright.ps1 install --with-deps chromium
+
+      - name: Ejecutar las pruebas unitarias
+        run: |
+          dotnet test tests/Licitaciones.UnitTests/Licitaciones.UnitTests.csproj \
+            --configuration Release --no-build \
+            --logger "trx;LogFileName=unitarias.trx" \
+            --collect:"XPlat Code Coverage" --settings coverage.runsettings \
+            --results-directory artefactos/pruebas
+
+      # Testcontainers usa el Docker que ya viene instalado en el ejecutor: las pruebas
+      # de integración corren contra PostgreSQL real, nunca contra una base en memoria.
+      - name: Ejecutar las pruebas de integración
+        run: |
+          dotnet test tests/Licitaciones.IntegrationTests/Licitaciones.IntegrationTests.csproj \
+            --configuration Release --no-build \
+            --logger "trx;LogFileName=integracion.trx" \
+            --collect:"XPlat Code Coverage" --settings coverage.runsettings \
+            --results-directory artefactos/pruebas
+
+      - name: Ejecutar las pruebas funcionales
+        run: |
+          dotnet test tests/Licitaciones.FunctionalTests/Licitaciones.FunctionalTests.csproj \
+            --configuration Release --no-build \
+            --logger "trx;LogFileName=funcionales.trx" \
+            --collect:"XPlat Code Coverage" --settings coverage.runsettings \
+            --results-directory artefactos/pruebas
+
+      - name: Combinar los informes de cobertura
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator \
+            -reports:"artefactos/pruebas/**/coverage.cobertura.xml" \
+            -targetdir:"artefactos/cobertura" \
+            -reporttypes:"Cobertura;HtmlInline;TextSummary"
+
+      - name: Verificar los umbrales de cobertura
+        run: python3 .github/scripts/verificar_cobertura.py artefactos/cobertura/Cobertura.xml
+
+      - name: Publicar los artefactos de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pruebas-y-cobertura
+          path: |
+            artefactos/pruebas/**/*.trx
+            artefactos/cobertura/**
+          retention-days: 14
+
+  # ---------------------------------------------------------------- Imagen de contenedor
+  imagen-de-contenedor:
+    name: Imagen y Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Preparar Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Construir la imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: licitaciones-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Comprobar que la imagen no corre como root
+        run: |
+          usuario=$(docker image inspect licitaciones-web:ci --format '{{.Config.User}}')
+          echo "Usuario de la imagen: '${usuario}'"
+          if [ -z "${usuario}" ] || [ "${usuario}" = "root" ] || [ "${usuario}" = "0" ]; then
+            echo "::error::La imagen debe ejecutarse con un usuario sin privilegios."
+            exit 1
+          fi
+
+      - name: Levantar el sistema con Docker Compose
+        run: |
+          cp .env.example .env
+          sed --in-place "s/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=clave-de-integracion-continua/" .env
+          docker compose up --build --detach
+
+      - name: Esperar a que la aplicación quede lista
+        run: |
+          for intento in $(seq 1 40); do
+            if curl --fail --silent http://localhost:8080/salud/listo; then
+              echo "La aplicación respondió a la sonda de preparación."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::La aplicación no quedó lista a tiempo."
+          docker compose logs --no-color
+          exit 1
+
+      - name: Comprobar la interfaz y la API
+        run: |
+          curl --fail --silent http://localhost:8080/ > /dev/null
+          curl --fail --silent http://localhost:8080/api/v1/tipos-cambio/activo | grep --quiet "crcPorUsd"
+          curl --fail --silent http://localhost:8080/swagger/v1/swagger.json | grep --quiet "/api/v1/licitaciones"
+
+      # El enunciado exige que los datos sobrevivan a un reinicio de los contenedores.
+      - name: Comprobar que los datos persisten tras reiniciar
+        run: |
+          creado=$(curl --fail --silent --request POST http://localhost:8080/api/v1/proveedores \
+            --header "Content-Type: application/json" \
+            --data '{"nombre":"Proveedor de integracion continua"}')
+          echo "${creado}"
+
+          docker compose down
+          docker compose up --detach
+
+          for intento in $(seq 1 40); do
+            curl --fail --silent http://localhost:8080/salud/listo && break
+            sleep 5
+          done
+
+          curl --fail --silent "http://localhost:8080/api/v1/proveedores?Buscar=integracion" \
+            | grep --quiet "Proveedor de integracion continua"
+          echo "El proveedor sobrevivió al reinicio: el volumen conserva los datos."
+
+      - name: Detener el entorno
+        if: always()
+        run: docker compose down --volumes
+
+  # ---------------------------------------------------------------- Manifiestos
+  manifiestos-kubernetes:
+    name: Validación de manifiestos
+    runs-on: ubuntu-latest
+    env:
+      VERSION_KUBECONFORM: "0.6.7"
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar kubeconform
+        run: |
+          curl --location --silent --show-error --fail \
+            "https://github.com/yannh/kubeconform/releases/download/v${VERSION_KUBECONFORM}/kubeconform-linux-amd64.tar.gz" \
+            | tar --extract --gzip kubeconform
+          sudo install kubeconform /usr/local/bin/kubeconform
+
+      - name: Validar los manifiestos contra el esquema de Kubernetes
+        run: kubeconform -strict -summary -kubernetes-version 1.30.0 k8s/
+
+  # ---------------------------------------------------------------- Resumen
+  integracion:
+    name: Integración
+    runs-on: ubuntu-latest
+    needs:
+      - estandar-de-codigo
+      - dependencias-vulnerables
+      - pruebas
+      - imagen-de-contenedor
+      - manifiestos-kubernetes
+    if: always()
+    steps:
+      - name: Bloquear si alguna etapa falló
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::La integración se detiene: al menos una etapa no pasó."
+            exit 1
+          fi
+          echo "Todas las etapas pasaron."
