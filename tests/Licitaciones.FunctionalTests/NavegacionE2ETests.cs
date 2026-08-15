@@ -63,12 +63,18 @@ public sealed class NavegacionE2ETests
         await RegistrarOfertaAsync(pagina, codigo, alfa, 9_500_000m);
         await RegistrarOfertaAsync(pagina, codigo, beta, 8_000_000m);
 
-        // La mejor oferta es la de menor monto y el ahorro llega al 20 %.
-        await Assertions.Expect(pagina.GetByText("Oferta conveniente")).ToBeVisibleAsync();
-        await Assertions.Expect(pagina.GetByText("Mejor oferta")).ToBeVisibleAsync();
+        // Coincidencia exacta en las tres: «Mejor oferta» aparece además dentro del encabezado
+        // «Mejor oferta y aprobación», y una coincidencia parcial resolvería a dos elementos.
+        await Assertions.Expect(pagina.GetByText("Oferta conveniente", new() { Exact = true }))
+            .ToBeVisibleAsync();
+
+        // La fila de la oferta ganadora queda marcada con su insignia.
+        await Assertions.Expect(pagina.GetByText("Mejor oferta", new() { Exact = true }))
+            .ToBeVisibleAsync();
 
         // El aprobador sale de la tabla parametrizable, no de una cadena de condicionales.
-        await Assertions.Expect(pagina.GetByText("Gerencia")).ToBeVisibleAsync();
+        await Assertions.Expect(pagina.GetByText("Gerencia", new() { Exact = true }))
+            .ToBeVisibleAsync();
     }
 
     [Fact]
