@@ -32,6 +32,15 @@ dotnet build Licitaciones.sln
 dotnet test tests/Licitaciones.UnitTests/Licitaciones.UnitTests.csproj
 ```
 
+Para ejecutar la aplicación contra una instancia propia de PostgreSQL, la cadena de conexión se
+configura fuera del repositorio, que no contiene credenciales de ningún entorno:
+
+```bash
+dotnet user-secrets --project src/Licitaciones.Web \
+  set "ConnectionStrings:Licitaciones" "Host=localhost;Port=5432;Database=licitaciones;Username=...;Password=..."
+dotnet run --project src/Licitaciones.Web
+```
+
 Las pruebas de integración y las funcionales necesitan Docker en marcha. Ver
 [pruebas.md](pruebas.md) §7.
 
