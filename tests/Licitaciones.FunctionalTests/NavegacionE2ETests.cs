@@ -48,11 +48,17 @@ public sealed class NavegacionE2ETests
         await RegistrarProveedorAsync(pagina, beta);
         await CrearLicitacionAsync(pagina, codigo, 10_000_000m);
 
-        // Recién creada, la licitación queda en borrador y todavía no admite ofertas.
-        await Assertions.Expect(pagina.GetByText("Borrador").First).ToBeVisibleAsync();
+        // Se comprueba la insignia de estado, no el texto suelto: «Publicada» aparece también
+        // dentro del botón «Pasar a Publicada» y una coincidencia parcial daría por buena una
+        // transición que no ocurrió.
+        await Assertions.Expect(pagina.Locator(".badge.estado-borrador")).ToBeVisibleAsync();
+
+        // El cambio de estado pide confirmación. Playwright descarta los diálogos si nadie los
+        // atiende, de modo que sin este manejador el formulario nunca llegaría a enviarse.
+        pagina.Dialog += async (_, dialogo) => await dialogo.AcceptAsync();
 
         await pagina.GetByRole(AriaRole.Button, new() { Name = "Pasar a Publicada" }).ClickAsync();
-        await Assertions.Expect(pagina.GetByText("Publicada").First).ToBeVisibleAsync();
+        await Assertions.Expect(pagina.Locator(".badge.estado-publicada")).ToBeVisibleAsync();
 
         await RegistrarOfertaAsync(pagina, codigo, alfa, 9_500_000m);
         await RegistrarOfertaAsync(pagina, codigo, beta, 8_000_000m);
@@ -142,7 +148,9 @@ public sealed class NavegacionE2ETests
 
         await RegistrarProveedorAsync(pagina, nombre);
 
-        await pagina.GotoAsync("/Proveedores");
+        // Se filtra por el nombre en lugar de confiar en la primera página del listado: toda la
+        // serie comparte una base de datos y los proveedores de las demás pruebas se acumulan.
+        await pagina.GotoAsync($"/Proveedores?Buscar={Uri.EscapeDataString(nombre)}");
         await pagina.GetByRole(AriaRole.Row, new() { Name = nombre })
             .GetByRole(AriaRole.Link, new() { Name = "Eliminar" })
             .ClickAsync();
