@@ -1,0 +1,246 @@
+### Colección reproducible de solicitudes — Sistema de Gestión de Licitaciones
+###
+### Ejecútela en orden sobre un entorno recién levantado con «docker compose up --build».
+### Compatible con REST Client (Visual Studio Code), Visual Studio y JetBrains Rider.
+### Cada solicitud toma los identificadores de las respuestas anteriores mediante variables.
+
+@base = http://localhost:8080
+@api = {{base}}/api/v1
+@json = application/json
+
+### ---------------------------------------------------------------- Salud del sistema
+
+### Sonda de vitalidad: solo confirma que el proceso responde
+GET {{base}}/salud/vivo
+
+### Sonda de preparación: además comprueba la base de datos
+GET {{base}}/salud/listo
+
+### Documento OpenAPI
+GET {{base}}/swagger/v1/swagger.json
+
+### ---------------------------------------------------------------- Tipo de cambio
+
+### Tipo de cambio activo sembrado por la migración inicial (520,0000 CRC por USD)
+GET {{api}}/tipos-cambio/activo
+
+### Conversión referencial: 1 040 000 CRC equivalen a 2 000 USD
+GET {{api}}/tipos-cambio/conversion?montoCrc=1040000
+
+### Registrar un tipo de cambio nuevo y dejarlo activo.
+### El anterior se desactiva en la misma transacción: solo puede haber uno activo.
+# @name crearTipoCambio
+POST {{api}}/tipos-cambio
+Content-Type: {{json}}
+
+{
+  "crcPorUsd": 545.5000,
+  "fechaVigencia": "2026-08-15T00:00:00-06:00",
+  "activo": true
+}
+
+### ---------------------------------------------------------------- Niveles de aprobación
+
+### Tabla parametrizable sembrada por la migración
+GET {{api}}/niveles-aprobacion
+
+### Aprobador que corresponde a 8 000 000 CRC: «Gerencia»
+GET {{api}}/niveles-aprobacion/aprobador?montoCrc=8000000
+
+### Rango traslapado: rechazado con 422 y NIVEL_APROBACION_RANGO_TRASLAPADO
+POST {{api}}/niveles-aprobacion
+Content-Type: {{json}}
+
+{
+  "montoMinimoCrc": 500000.00,
+  "montoMaximoCrc": 2000000.00,
+  "aprobador": "Nivel invalido"
+}
+
+### Segundo rango abierto: rechazado con 422 y NIVEL_APROBACION_RANGO_ABIERTO_DUPLICADO
+POST {{api}}/niveles-aprobacion
+Content-Type: {{json}}
+
+{
+  "montoMinimoCrc": 50000000.00,
+  "aprobador": "Otro rango abierto"
+}
+
+### ---------------------------------------------------------------- Proveedores
+
+# @name crearProveedorAlfa
+POST {{api}}/proveedores
+Content-Type: {{json}}
+
+{ "nombre": "Constructora Alfa" }
+
+###
+@proveedorAlfa = {{crearProveedorAlfa.response.body.id}}
+@versionAlfa = {{crearProveedorAlfa.response.body.version}}
+
+# @name crearProveedorBeta
+POST {{api}}/proveedores
+Content-Type: {{json}}
+
+{ "nombre": "Constructora Beta" }
+
+###
+@proveedorBeta = {{crearProveedorBeta.response.body.id}}
+
+### Duplicado por normalización: mismo nombre con otras mayúsculas y espacios.
+### Se rechaza con 409 y PROVEEDOR_NOMBRE_DUPLICADO.
+POST {{api}}/proveedores
+Content-Type: {{json}}
+
+{ "nombre": "  constructora   ALFA  " }
+
+### Caracteres fuera del conjunto permitido: 400 con VALIDACION_ENTRADA
+POST {{api}}/proveedores
+Content-Type: {{json}}
+
+{ "nombre": "Constructora <script>" }
+
+### Consultar el proveedor creado
+GET {{api}}/proveedores/{{proveedorAlfa}}
+
+### Listado con búsqueda, paginación y orden
+GET {{api}}/proveedores?Buscar=constructora&Pagina=1&TamanoPagina=10&OrdenarPor=nombre
+
+### Actualizar enviando la versión que se tenía a la vista
+PUT {{api}}/proveedores/{{proveedorAlfa}}
+Content-Type: {{json}}
+
+{ "nombre": "Constructora Alfa S.A.", "version": {{versionAlfa}} }
+
+### Reenviar la misma versión ya consumida: 409 con CONFLICTO_CONCURRENCIA
+PUT {{api}}/proveedores/{{proveedorAlfa}}
+Content-Type: {{json}}
+
+{ "nombre": "Constructora Alfa Limitada", "version": {{versionAlfa}} }
+
+### ---------------------------------------------------------------- Licitaciones
+
+### Nace en estado Borrador
+# @name crearLicitacion
+POST {{api}}/licitaciones
+Content-Type: {{json}}
+
+{
+  "codigo": "LIC-2026-001",
+  "titulo": "Compra de equipo de cómputo",
+  "fechaCierre": "2026-12-31T23:59:00-06:00",
+  "presupuestoEstimadoCrc": 10000000.00
+}
+
+###
+@licitacion = {{crearLicitacion.response.body.id}}
+
+### Código duplicado tras normalizar: 409 con LICITACION_CODIGO_DUPLICADO
+POST {{api}}/licitaciones
+Content-Type: {{json}}
+
+{
+  "codigo": "  lic-2026-001 ",
+  "titulo": "Otra compra",
+  "fechaCierre": "2026-12-31T23:59:00-06:00",
+  "presupuestoEstimadoCrc": 5000000.00
+}
+
+### Fecha de cierre en el pasado: 422 con LICITACION_FECHA_CIERRE_INVALIDA
+POST {{api}}/licitaciones
+Content-Type: {{json}}
+
+{
+  "codigo": "LIC-2026-999",
+  "titulo": "Compra vencida",
+  "fechaCierre": "2020-01-01T00:00:00-06:00",
+  "presupuestoEstimadoCrc": 5000000.00
+}
+
+### Detalle: incluye la evaluación de ofertas y las transiciones disponibles
+GET {{api}}/licitaciones/{{licitacion}}
+
+### Antes de publicar no hay ofertas válidas
+GET {{api}}/licitaciones/{{licitacion}}/mejor-oferta
+
+### Transición Borrador -> Publicada
+PATCH {{api}}/licitaciones/{{licitacion}}/estado
+Content-Type: {{json}}
+
+{ "nuevoEstado": "Publicada" }
+
+### Transición prohibida Publicada -> Borrador: 422 con LICITACION_TRANSICION_NO_PERMITIDA
+PATCH {{api}}/licitaciones/{{licitacion}}/estado
+Content-Type: {{json}}
+
+{ "nuevoEstado": "Borrador" }
+
+### ---------------------------------------------------------------- Ofertas
+
+### Oferta del primer proveedor
+POST {{api}}/licitaciones/{{licitacion}}/ofertas
+Content-Type: {{json}}
+
+{ "proveedorId": "{{proveedorAlfa}}", "montoOfertadoCrc": 9500000.00 }
+
+### Oferta del segundo proveedor, más baja: será la mejor
+POST {{api}}/licitaciones/{{licitacion}}/ofertas
+Content-Type: {{json}}
+
+{ "proveedorId": "{{proveedorBeta}}", "montoOfertadoCrc": 8000000.00 }
+
+### Segunda oferta del mismo proveedor: 409 con OFERTA_DUPLICADA
+POST {{api}}/licitaciones/{{licitacion}}/ofertas
+Content-Type: {{json}}
+
+{ "proveedorId": "{{proveedorAlfa}}", "montoOfertadoCrc": 7000000.00 }
+
+### Oferta por encima del presupuesto: 422 con OFERTA_SUPERA_PRESUPUESTO
+POST {{api}}/licitaciones/{{licitacion}}/ofertas
+Content-Type: {{json}}
+
+{ "proveedorId": "{{proveedorBeta}}", "montoOfertadoCrc": 11000000.00 }
+
+### Mejor oferta: 8 000 000 CRC, 20 % de ahorro, «Oferta conveniente», aprobador «Gerencia»
+GET {{api}}/licitaciones/{{licitacion}}/mejor-oferta
+
+### Ofertas de la licitación, ordenadas de menor a mayor monto
+GET {{api}}/licitaciones/{{licitacion}}/ofertas
+
+### Ofertas de un proveedor
+GET {{api}}/proveedores/{{proveedorBeta}}/ofertas
+
+### Listado general filtrado por licitación
+GET {{api}}/ofertas?LicitacionId={{licitacion}}&OrdenarPor=monto
+
+### ---------------------------------------------------------------- Reglas de borrado
+
+### Bajar el presupuesto por debajo de una oferta existente:
+### 422 con LICITACION_PRESUPUESTO_MENOR_A_OFERTA_EXISTENTE
+PUT {{api}}/licitaciones/{{licitacion}}
+Content-Type: {{json}}
+
+{
+  "codigo": "LIC-2026-001",
+  "titulo": "Compra de equipo de cómputo",
+  "fechaCierre": "2026-12-31T23:59:00-06:00",
+  "presupuestoEstimadoCrc": 1000000.00
+}
+
+### Eliminar una licitación con ofertas: 409 con LICITACION_CON_OFERTAS
+DELETE {{api}}/licitaciones/{{licitacion}}
+
+### Cerrar la licitación (transición permitida desde Publicada)
+PATCH {{api}}/licitaciones/{{licitacion}}/estado
+Content-Type: {{json}}
+
+{ "nuevoEstado": "Cerrada" }
+
+### ---------------------------------------------------------------- Errores controlados
+
+### Identificador inexistente: 404 con RECURSO_NO_ENCONTRADO,
+### sin trazas, rutas internas ni consultas SQL en la respuesta
+GET {{api}}/proveedores/00000000-0000-0000-0000-000000000000
+
+### Versión de API no declarada: no resuelve ningún endpoint
+GET {{base}}/api/v9/proveedores

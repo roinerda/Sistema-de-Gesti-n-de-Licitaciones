@@ -279,7 +279,7 @@ aproximadamente al esfuerzo de la historia más simple del proyecto (H-01).
 3. Solo puede existir un rango sin monto máximo.
 4. Los rangos semilla son los del enunciado: Encargado de área, Gerencia y Junta Directiva.
 
-**Evidencia** · Pruebas: `SelectorNivelAprobacionTests`, `ServicioNivelesAprobacionTests`
+**Evidencia** · Pruebas: `NivelAprobacionTests`, `ServicioNivelesAprobacionTests`
 · Módulo: [niveles-aprobacion.md](modulos/niveles-aprobacion.md)
 
 ---
@@ -324,7 +324,7 @@ aproximadamente al esfuerzo de la historia más simple del proyecto (H-01).
 3. Se muestra la fecha del tipo de cambio utilizado.
 4. La preferencia se conserva al navegar entre páginas.
 
-**Evidencia** · Pruebas: `ConversorMonedaTests`, `ServicioConversionMonedaTests`, `NavegacionE2ETests`
+**Evidencia** · Pruebas: `ConversorMonedaTests`, `PersistenciaTiposCambioTests`, `NavegacionE2ETests`
 · Módulo: [tipo-cambio.md](modulos/tipo-cambio.md)
 
 ---

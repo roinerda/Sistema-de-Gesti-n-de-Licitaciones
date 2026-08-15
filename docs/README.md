@@ -15,7 +15,25 @@ docker compose up --build
 #    Documentación API:   http://localhost:8080/swagger
 ```
 
+Antes del primer arranque hay que crear el archivo de credenciales:
+
+```bash
+cp .env.example .env   # y editar POSTGRES_PASSWORD
+```
+
 Instrucciones completas en [docker.md](docker.md) y [kubernetes.md](kubernetes.md).
+
+### Sin Docker
+
+Con solo el SDK de .NET 9 se pueden ejecutar la compilación y las pruebas unitarias:
+
+```bash
+dotnet build Licitaciones.sln
+dotnet test tests/Licitaciones.UnitTests/Licitaciones.UnitTests.csproj
+```
+
+Las pruebas de integración y las funcionales necesitan Docker en marcha. Ver
+[pruebas.md](pruebas.md) §7.
 
 ## Índice
 
@@ -56,8 +74,21 @@ Instrucciones completas en [docker.md](docker.md) y [kubernetes.md](kubernetes.m
 | ----- | ----- |
 | [pruebas.md](pruebas.md) | Estrategia de pruebas, ejecución, cobertura y casos principales. |
 | [api.md](api.md) | Endpoints, contratos, ejemplos y colección reproducible de solicitudes. |
-| [docker.md](docker.md) | Imagen, Docker Compose, persistencia y *health checks*. |
-| [kubernetes.md](kubernetes.md) | Manifiestos, sondas, almacenamiento y evidencias de despliegue. |
+| [docker.md](docker.md) | Imagen, Docker Compose, persistencia y comprobaciones de salud. |
+| [kubernetes.md](kubernetes.md) | Manifiestos, sondas, almacenamiento y diagnóstico del despliegue. |
+| [assets/](assets/README.md) | Recursos de apoyo, incluida la colección reproducible de solicitudes a la API. |
+
+### Estructura del repositorio
+
+```
+src/            Licitaciones.{Domain, Application, Infrastructure, Api, Web}
+tests/          Licitaciones.{UnitTests, IntegrationTests, FunctionalTests}
+docs/           Esta documentación (única ubicación autorizada)
+k8s/            Manifiestos de Kubernetes
+.github/        Integración continua
+Dockerfile      Imagen de la aplicación
+docker-compose.yml
+```
 
 ---
 
