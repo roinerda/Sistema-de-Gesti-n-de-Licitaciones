@@ -15,7 +15,14 @@
 *.css text
 *.js text
 *.sh text eol=lf
+
+# Los archivos que consume Docker o Kubernetes se mantienen con LF: un retorno de
+# carro dentro de un patrón de .dockerignore o de un manifiesto puede alterarlo.
 Dockerfile text eol=lf
+.dockerignore text eol=lf
+.env.example text eol=lf
+docker-compose.yml text eol=lf
+k8s/*.yaml text eol=lf
 *.png binary
 *.jpg binary
 *.ico binary
