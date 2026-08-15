@@ -79,8 +79,14 @@ consulta el monto de la oferta mayor y se lo pasa a la entidad, que decide.
 
 ## 5. Eliminación
 
-Borrado **lógico** con `deleted_at`. Una licitación con ofertas no se puede eliminar
-(`LICITACION_CON_OFERTAS`, `409`): las ofertas son la evidencia del proceso.
+Borrado **lógico** con `deleted_at`, que devuelve `204`. Tener ofertas **no** impide la baja: la
+regla del enunciado es conservarlas como evidencia, no bloquear el expediente. La licitación
+desaparece de los listados ordinarios y sus ofertas siguen consultables, porque son las que explican
+por qué se adjudicó lo que se adjudicó.
+
+Impedir la baja habría hecho inútil el borrado lógico justo en el caso para el que existe: una
+licitación sin ofertas se puede borrar sin perder nada, y es la que sí tiene ofertas la que necesita
+conservarse.
 
 El índice único del código es parcial (`WHERE deleted_at IS NULL`), de modo que dar de baja una
 licitación libera su código para otra nueva, sin permitir dos vigentes con el mismo.

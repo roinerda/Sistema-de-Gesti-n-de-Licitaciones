@@ -100,7 +100,7 @@ Respuesta:
 | `GET` | `/api/v1/proveedores/{id}/ofertas` | Ofertas presentadas por el proveedor. |
 | `POST` | `/api/v1/proveedores` | Crea. `409` si el nombre normalizado ya existe. |
 | `PUT` | `/api/v1/proveedores/{id}` | Actualiza. Envíe `version` para detectar ediciones concurrentes. |
-| `DELETE` | `/api/v1/proveedores/{id}` | Borrado lógico. `409` si tiene ofertas y la política lo impide. |
+| `DELETE` | `/api/v1/proveedores/{id}` | Borrado lógico. Devuelve `204` también si tiene ofertas: se conservan como evidencia. |
 
 Cuerpo de creación y actualización:
 
@@ -117,7 +117,7 @@ Cuerpo de creación y actualización:
 | `POST` | `/api/v1/licitaciones` | Crea en estado `Borrador`. |
 | `PUT` | `/api/v1/licitaciones/{id}` | Actualiza. `422` si el nuevo presupuesto queda por debajo de una oferta ya registrada. |
 | `PATCH` | `/api/v1/licitaciones/{id}/estado` | Aplica una transición. `422` si no está permitida. |
-| `DELETE` | `/api/v1/licitaciones/{id}` | Borrado lógico. `409` si tiene ofertas. |
+| `DELETE` | `/api/v1/licitaciones/{id}` | Borrado lógico. Devuelve `204` también si tiene ofertas: se conservan como evidencia. |
 | `GET` | `/api/v1/licitaciones/{id}/ofertas` | Ofertas de la licitación. |
 | `POST` | `/api/v1/licitaciones/{id}/ofertas` | Registra una oferta en esa licitación. |
 | `GET` | `/api/v1/licitaciones/{id}/mejor-oferta` | Mejor oferta, ahorro, clasificación y aprobador. |
@@ -287,14 +287,14 @@ curl -s -X PATCH "$BASE/licitaciones/$LIC/estado" -H 'Content-Type: application/
 | `VALIDACION_ENTRADA` | Falló la validación de anotaciones del DTO. |
 | `CONFLICTO_CONCURRENCIA` | Otra persona modificó el registro entre la lectura y la escritura. |
 | `PROVEEDOR_NOMBRE_REQUERIDO` / `_DEMASIADO_LARGO` / `_CARACTERES_NO_PERMITIDOS` / `_DUPLICADO` | Reglas del nombre de proveedor. |
-| `PROVEEDOR_CON_OFERTAS`, `PROVEEDOR_ELIMINADO` | Dependencias o estado del proveedor. |
+| `PROVEEDOR_ELIMINADO` | Se intentó modificar un proveedor dado de baja. |
 | `LICITACION_CODIGO_REQUERIDO` / `_DEMASIADO_LARGO` / `_DUPLICADO` | Reglas del código. |
 | `LICITACION_TITULO_REQUERIDO` / `_DEMASIADO_LARGO` | Reglas del título. |
 | `LICITACION_PRESUPUESTO_INVALIDO` | El presupuesto no es mayor que cero. |
 | `LICITACION_PRESUPUESTO_MENOR_A_OFERTA_EXISTENTE` | Bajar el presupuesto invalidaría una oferta ya registrada. |
 | `LICITACION_FECHA_CIERRE_INVALIDA` | La fecha de cierre no es futura. |
 | `LICITACION_TRANSICION_NO_PERMITIDA` | La transición no está en la tabla de transiciones. |
-| `LICITACION_CERRADA`, `LICITACION_ELIMINADA`, `LICITACION_CON_OFERTAS` | Estado o dependencias de la licitación. |
+| `LICITACION_CERRADA`, `LICITACION_ELIMINADA` | Estado de la licitación que impide la operación. |
 | `OFERTA_MONTO_INVALIDO`, `OFERTA_SUPERA_PRESUPUESTO`, `OFERTA_DUPLICADA` | Reglas de la oferta. |
 | `OFERTA_LICITACION_NO_PUBLICADA`, `OFERTA_VENCIDA` | La licitación no admite ofertas en este momento. |
 | `NIVEL_APROBACION_RANGO_INVALIDO` / `_TRASLAPADO` / `_ABIERTO_DUPLICADO` | Reglas de los rangos de aprobación. |

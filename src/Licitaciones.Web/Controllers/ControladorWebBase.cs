@@ -38,9 +38,16 @@ public abstract class ControladorWebBase : Controller
     {
         ArgumentNullException.ThrowIfNull(error);
 
-        // Si el error identifica un campo, el mensaje aparece junto a ese campo del formulario;
-        // en caso contrario se muestra en el resumen de validación.
-        ModelState.AddModelError(error.Campo ?? string.Empty, error.Mensaje);
+        // El nombre del campo lo decide el dominio y no siempre coincide con el del formulario:
+        // la licitación valida «FechaCierre» mientras el formulario enlaza «FechaCierreLocal»,
+        // porque el navegador envía la fecha sin desplazamiento horario. Si la clave no está
+        // enlazada, el mensaje va al resumen de validación en lugar de a un campo inexistente,
+        // donde no lo mostraría ninguna vista: un error invisible es peor que uno mal colocado.
+        string clave = error.Campo is { Length: > 0 } campo && ModelState.ContainsKey(campo)
+            ? campo
+            : string.Empty;
+
+        ModelState.AddModelError(clave, error.Mensaje);
     }
 
     /// <summary>

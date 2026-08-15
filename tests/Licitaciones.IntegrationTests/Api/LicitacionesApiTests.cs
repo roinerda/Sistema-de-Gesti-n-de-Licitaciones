@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Licitaciones.Application.Comun;
 using Licitaciones.Application.Dtos;
 using Licitaciones.Domain.Comun;
 using Licitaciones.Domain.Enumeraciones;
@@ -163,7 +164,7 @@ public sealed class LicitacionesApiTests : PruebaApi
     }
 
     [Fact]
-    public async Task Eliminar_ConOfertasRegistradas_DevuelveConflicto()
+    public async Task Eliminar_ConOfertasRegistradas_AplicaBorradoLogicoYConservaLasOfertas()
     {
         LicitacionDto creada = await CrearLicitacionAsync("LIC-2026-006");
         await CambiarEstadoAsync(creada.Id, EstadoLicitacion.Publicada);
@@ -171,14 +172,23 @@ public sealed class LicitacionesApiTests : PruebaApi
         ProveedorDto proveedor = await CrearProveedorAsync("Constructora Alfa");
         await RegistrarOfertaAsync(creada.Id, proveedor.Id, 1_000_000m);
 
+        // El borrado es lógico y no se bloquea por tener ofertas: la regla del enunciado es
+        // conservarlas como evidencia, no impedir la baja del expediente.
         using HttpResponseMessage respuesta = await Cliente.DeleteAsync($"{Ruta}/{creada.Id}");
+        Assert.Equal(HttpStatusCode.NoContent, respuesta.StatusCode);
 
-        Assert.Equal(HttpStatusCode.Conflict, respuesta.StatusCode);
+        // La licitación desaparece del listado ordinario.
+        using HttpResponseMessage listado = await Cliente.GetAsync(Ruta);
+        PaginaResultado<LicitacionDto> pagina = await LeerAsync<PaginaResultado<LicitacionDto>>(listado);
+        Assert.DoesNotContain(pagina.Elementos, l => l.Id == creada.Id);
 
-        using JsonDocument problema = await LeerProblemaAsync(respuesta);
-        Assert.Equal(
-            CodigosError.LicitacionConOfertas,
-            problema.RootElement.GetProperty("codigoError").GetString());
+        // Pero la oferta sigue registrada: es la evidencia de por qué se adjudicó lo que se adjudicó.
+        using HttpResponseMessage ofertas = await Cliente.GetAsync($"{Ruta}/{creada.Id}/ofertas");
+        PaginaResultado<OfertaDto> registradas = await LeerAsync<PaginaResultado<OfertaDto>>(ofertas);
+
+        Assert.Single(registradas.Elementos);
+        Assert.Equal(1_000_000m, registradas.Elementos[0].MontoOfertadoCrc);
+        Assert.Equal("Constructora Alfa", registradas.Elementos[0].ProveedorNombre);
     }
 
     [Fact]

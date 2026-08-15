@@ -19,7 +19,6 @@ public static class CodigosError
     public const string NombreProveedorLargo = "PROVEEDOR_NOMBRE_DEMASIADO_LARGO";
     public const string NombreProveedorCaracteres = "PROVEEDOR_NOMBRE_CARACTERES_NO_PERMITIDOS";
     public const string NombreProveedorDuplicado = "PROVEEDOR_NOMBRE_DUPLICADO";
-    public const string ProveedorConOfertas = "PROVEEDOR_CON_OFERTAS";
     public const string ProveedorEliminado = "PROVEEDOR_ELIMINADO";
 
     // Licitación
@@ -34,7 +33,6 @@ public static class CodigosError
     public const string TransicionNoPermitida = "LICITACION_TRANSICION_NO_PERMITIDA";
     public const string LicitacionCerrada = "LICITACION_CERRADA";
     public const string LicitacionEliminada = "LICITACION_ELIMINADA";
-    public const string LicitacionConOfertas = "LICITACION_CON_OFERTAS";
 
     // Oferta
     public const string MontoOfertaInvalido = "OFERTA_MONTO_INVALIDO";

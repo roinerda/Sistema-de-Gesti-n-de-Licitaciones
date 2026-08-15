@@ -227,8 +227,12 @@ Content-Type: {{json}}
   "presupuestoEstimadoCrc": 1000000.00
 }
 
-### Eliminar una licitación con ofertas: 409 con LICITACION_CON_OFERTAS
+### Eliminar una licitación con ofertas: 204. El borrado es lógico y las ofertas se
+### conservan como evidencia, de modo que siguen consultables tras la baja.
 DELETE {{api}}/licitaciones/{{licitacion}}
+
+### Las ofertas de la licitación dada de baja siguen ahí
+GET {{api}}/licitaciones/{{licitacion}}/ofertas
 
 ### Cerrar la licitación (transición permitida desde Publicada)
 PATCH {{api}}/licitaciones/{{licitacion}}/estado
