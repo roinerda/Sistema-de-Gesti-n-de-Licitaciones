@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Capa de presentación REST: controladores, contratos HTTP, versionado, OpenAPI y ProblemDetails.
+    Se empaqueta como biblioteca de ASP.NET Core y el host web la compone como parte de la aplicación,
+    de modo que la solución se despliega como un único contenedor (monolito modular).
+    La justificación de esta decisión está en /docs/arquitectura-general.md.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Licitaciones.Api</RootNamespace>
+    <AssemblyName>Licitaciones.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Licitaciones.Application\Licitaciones.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+</Project>
