@@ -1,0 +1,72 @@
+# =====================================================================================
+# Sistema de Gestión de Licitaciones: aplicación y base de datos.
+#
+#   docker compose up --build
+#
+# Las credenciales se leen de un archivo .env que no se versiona (véase .env.example).
+# Los datos de PostgreSQL viven en un volumen con nombre, de modo que sobreviven a
+# «docker compose down» y a cualquier reinicio de los contenedores.
+# =====================================================================================
+
+name: licitaciones
+
+services:
+
+  base-datos:
+    image: postgres:16-alpine
+    container_name: licitaciones-base-datos
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-licitaciones}
+      POSTGRES_USER: ${POSTGRES_USER:-licitaciones}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD en el archivo .env}
+      # Zona horaria del motor. Las marcas se guardan en UTC; esto solo afecta a los registros.
+      TZ: America/Costa_Rica
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=${POSTGRES_USER:-licitaciones} --dbname=${POSTGRES_DB:-licitaciones}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - licitaciones
+
+  aplicacion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: licitaciones-web:local
+    container_name: licitaciones-aplicacion
+    restart: unless-stopped
+    depends_on:
+      base-datos:
+        # La aplicación no arranca hasta que PostgreSQL responde: así las migraciones
+        # del inicio no fallan en el primer «docker compose up».
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      # La cadena de conexión nunca se versiona: se compone aquí a partir del .env.
+      ConnectionStrings__Licitaciones: >-
+        Host=base-datos;Port=5432;Database=${POSTGRES_DB:-licitaciones};Username=${POSTGRES_USER:-licitaciones};Password=${POSTGRES_PASSWORD};Include Error Detail=false
+      BaseDatos__AplicarMigracionesAlIniciar: "true"
+      TZ: America/Costa_Rica
+    ports:
+      - "${PUERTO_APLICACION:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/salud/listo"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - licitaciones
+
+volumes:
+  datos-postgres:
+    name: licitaciones-datos-postgres
+
+networks:
+  licitaciones:
+    name: licitaciones

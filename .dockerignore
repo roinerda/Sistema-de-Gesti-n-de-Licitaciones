@@ -1,0 +1,31 @@
+# Solo entra al contexto de compilación lo que la imagen necesita.
+# Evita enviar binarios locales, secretos y artefactos de pruebas al demonio de Docker.
+
+**/bin/
+**/obj/
+**/TestResults/
+**/.vs/
+**/.vscode/
+**/.idea/
+
+.git/
+.github/
+.config/
+
+docs/
+k8s/
+tests/
+
+**/*.user
+**/*.suo
+**/appsettings.Local.json
+**/appsettings.Development.json
+.env
+*.log
+
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+coverage.runsettings
+REALIZAR.md
