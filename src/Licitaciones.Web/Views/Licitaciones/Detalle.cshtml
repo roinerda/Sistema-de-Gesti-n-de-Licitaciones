@@ -1,0 +1,174 @@
+@model LicitacionDetalleDto
+@{
+    LicitacionDto licitacion = Model.Licitacion;
+    MejorOfertaDto mejor = Model.MejorOferta;
+    ViewData["Title"] = licitacion.Codigo;
+    var ofertas = ViewData["Ofertas"] as PaginaResultado<OfertaDto>;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-1">@licitacion.Codigo</h1>
+        <p class="text-body-secondary mb-0">@licitacion.Titulo</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        @if (!licitacion.Eliminada && !licitacion.CerradaFuncionalmente)
+        {
+            <a class="btn btn-outline-secondary" asp-action="Editar" asp-route-id="@licitacion.Id">Editar</a>
+        }
+        @if (licitacion.Estado == EstadoLicitacion.Publicada && !licitacion.CerradaFuncionalmente)
+        {
+            <a class="btn btn-primary" asp-controller="Ofertas" asp-action="Crear" asp-route-licitacionId="@licitacion.Id">
+                Registrar oferta
+            </a>
+        }
+        <a class="btn btn-outline-secondary" asp-action="Index">Volver</a>
+    </div>
+</div>
+
+@if (licitacion.Eliminada)
+{
+    <div class="alert alert-warning">Esta licitación fue eliminada. Se conserva únicamente como evidencia.</div>
+}
+else if (licitacion.CerradaFuncionalmente && licitacion.Estado == EstadoLicitacion.Publicada)
+{
+    <div class="alert alert-warning">
+        La fecha de cierre ya se alcanzó, por lo que la licitación se considera <strong>cerrada
+        funcionalmente</strong> aunque su estado siga indicando «Publicada». No admite nuevas ofertas ni
+        cambios en las existentes.
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-body-secondary">Datos de la licitación</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Estado</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge estado-@licitacion.Estado.ToString().ToLowerInvariant()">
+                            @licitacion.EstadoDescripcion
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-5">Presupuesto estimado</dt>
+                    <dd class="col-sm-7">@Html.Monto(licitacion.PresupuestoEstimadoCrc)</dd>
+
+                    <dt class="col-sm-5">Fecha de cierre</dt>
+                    <dd class="col-sm-7">@Html.FechaLocal(licitacion.FechaCierre)</dd>
+
+                    <dt class="col-sm-5">Ofertas registradas</dt>
+                    <dd class="col-sm-7">@licitacion.CantidadOfertas</dd>
+
+                    <dt class="col-sm-5">Creada</dt>
+                    <dd class="col-sm-7">@Html.FechaLocal(licitacion.CreatedAt)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-body-secondary">Mejor oferta y aprobación</h2>
+
+                @if (mejor.Oferta is null)
+                {
+                    <p class="fs-5 mb-0">@mejor.ClasificacionDescripcion</p>
+                    <p class="text-body-secondary mb-0 small">
+                        Cuando se registre la primera oferta válida aparecerán aquí el ahorro y el aprobador.
+                    </p>
+                }
+                else
+                {
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Proveedor</dt>
+                        <dd class="col-sm-7">@mejor.Oferta.ProveedorNombre</dd>
+
+                        <dt class="col-sm-5">Monto ofertado</dt>
+                        <dd class="col-sm-7">@Html.Monto(mejor.Oferta.MontoOfertadoCrc)</dd>
+
+                        <dt class="col-sm-5">Ahorro</dt>
+                        <dd class="col-sm-7">@mejor.PorcentajeAhorro.ToString("N2", ZonaHorariaCostaRica.Cultura) %</dd>
+
+                        <dt class="col-sm-5">Clasificación</dt>
+                        <dd class="col-sm-7"><strong>@mejor.ClasificacionDescripcion</strong></dd>
+
+                        <dt class="col-sm-5">Aprobador</dt>
+                        <dd class="col-sm-7">@(mejor.Aprobador ?? "Sin nivel de aprobación configurado")</dd>
+                    </dl>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.TransicionesPermitidas.Count > 0 && !licitacion.Eliminada)
+{
+    <div class="card mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center gap-2">
+            <span class="me-2">Transiciones disponibles:</span>
+            @foreach (EstadoLicitacion destino in Model.TransicionesPermitidas)
+            {
+                <form method="post" asp-action="CambiarEstado" asp-route-id="@licitacion.Id" class="d-inline"
+                      data-confirmar="¿Cambiar el estado de la licitación a @destino?">
+                    <input type="hidden" name="nuevoEstado" value="@destino" />
+                    <button class="btn btn-sm btn-outline-primary" type="submit">Pasar a @destino</button>
+                </form>
+            }
+        </div>
+    </div>
+}
+
+<h2 class="h5 mb-3">Ofertas recibidas</h2>
+
+@if (ofertas is null || ofertas.Elementos.Count == 0)
+{
+    <p class="text-body-secondary">Todavía no hay ofertas registradas para esta licitación.</p>
+}
+else
+{
+    <div class="tabla-desplazable">
+        <table class="table table-hover align-middle">
+            <caption class="visually-hidden">Ofertas recibidas, ordenadas de menor a mayor monto</caption>
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Proveedor</th>
+                    <th scope="col" class="columna-monto">Monto ofertado</th>
+                    <th scope="col">Registrada</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ int posicion = 1; }
+                @foreach (OfertaDto oferta in ofertas.Elementos)
+                {
+                    <tr class="@(oferta.Id == mejor.Oferta?.Id ? "table-success" : null)">
+                        <td>@posicion</td>
+                        <td>
+                            <a asp-controller="Proveedores" asp-action="Detalle" asp-route-id="@oferta.ProveedorId">
+                                @oferta.ProveedorNombre
+                            </a>
+                            @if (oferta.Id == mejor.Oferta?.Id)
+                            {
+                                <span class="badge text-bg-success">Mejor oferta</span>
+                            }
+                        </td>
+                        <td class="columna-monto">@Html.Monto(oferta.MontoOfertadoCrc)</td>
+                        <td>@Html.FechaLocal(oferta.FechaRegistro)</td>
+                        <td class="text-end">
+                            @if (!licitacion.CerradaFuncionalmente)
+                            {
+                                <a class="btn btn-sm btn-outline-secondary" asp-controller="Ofertas" asp-action="Editar" asp-route-id="@oferta.Id">Editar</a>
+                                <a class="btn btn-sm btn-outline-danger" asp-controller="Ofertas" asp-action="Eliminar" asp-route-id="@oferta.Id">Eliminar</a>
+                            }
+                        </td>
+                    </tr>
+                    posicion++;
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,24 @@
+@model LicitacionDto
+@{
+    ViewData["Title"] = "Eliminar licitación";
+}
+
+<h1 class="h3 mb-3">Eliminar licitación</h1>
+
+<div class="alert alert-warning">
+    <p class="mb-1">
+        ¿Confirma la eliminación de <strong>@Model.Codigo — @Model.Titulo</strong>?
+    </p>
+    <p class="mb-0 small">
+        Se aplica un borrado lógico: la licitación deja de aparecer en los listados, pero sus
+        @Model.CantidadOfertas oferta(s) se conservan como evidencia del proceso.
+    </p>
+</div>
+
+<form method="post" asp-action="Eliminar" asp-route-id="@Model.Id"
+      data-confirmar="¿Eliminar la licitación @Model.Codigo?">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+    </div>
+</form>

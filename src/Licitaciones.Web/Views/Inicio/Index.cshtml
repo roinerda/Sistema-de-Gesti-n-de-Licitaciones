@@ -1,0 +1,159 @@
+@model InicioVista
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<section class="p-4 p-md-5 mb-4 rounded-3 bg-body-tertiary border">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <h1 class="display-6 fw-semibold">Sistema de Gestión de Licitaciones</h1>
+            <p class="lead mb-3">
+                Administre procesos de compra de principio a fin: publique una licitación, reciba ofertas de
+                sus proveedores, identifique automáticamente la mejor oferta y determine quién debe aprobarla
+                según el monto.
+            </p>
+            <p class="mb-4">
+                La moneda oficial del sistema es el <strong>colón costarricense (CRC)</strong>. La vista en
+                dólares es una conversión referencial que <strong>no modifica</strong> los valores guardados.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" asp-controller="Licitaciones" asp-action="Crear">Crear una licitación</a>
+                <a class="btn btn-outline-secondary" asp-controller="Proveedores" asp-action="Crear">Registrar un proveedor</a>
+                <a class="btn btn-outline-secondary" href="/swagger" target="_blank" rel="noopener">Documentación de la API</a>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card tarjeta-resumen">
+                <div class="card-body">
+                    <h2 class="h6 text-uppercase text-body-secondary">Estado actual</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-8">Licitaciones registradas</dt>
+                        <dd class="col-4 text-end fs-5">@Model.TotalLicitaciones</dd>
+                        <dt class="col-8">Proveedores vigentes</dt>
+                        <dd class="col-4 text-end fs-5">@Model.TotalProveedores</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-5">
+    <h2 class="h4 mb-3">Cómo funciona el flujo</h2>
+    <ol class="lista-flujo row g-4">
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Registrar proveedores</h3>
+            <p class="text-body-secondary mb-0">
+                Cada proveedor tiene un nombre único. <em>Empresa Central</em>, <em>empresa central</em> y
+                <em>EMPRESA&nbsp;&nbsp;&nbsp;CENTRAL</em> se consideran el mismo proveedor.
+            </p>
+        </li>
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Crear y publicar la licitación</h3>
+            <p class="text-body-secondary mb-0">
+                Nace en <strong>Borrador</strong> con código único, presupuesto y fecha de cierre elegida en el
+                calendario. Publicarla la habilita para recibir ofertas.
+            </p>
+        </li>
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Recibir ofertas</h3>
+            <p class="text-body-secondary mb-0">
+                Cada proveedor presenta como máximo una oferta por licitación, siempre mayor que cero y nunca
+                superior al presupuesto. Al llegar la fecha de cierre no se admiten más ofertas.
+            </p>
+        </li>
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Determinar la mejor oferta</h3>
+            <p class="text-body-secondary mb-0">
+                Gana el menor monto en colones; si hay empate, la oferta registrada primero.
+            </p>
+        </li>
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Clasificar el ahorro</h3>
+            <p class="text-body-secondary mb-0">
+                Ahorro ≥ 10 % → <em>Oferta conveniente</em>; entre 0 % y 10 % → <em>Oferta aceptable</em>;
+                igual al presupuesto → <em>Oferta válida sin ahorro</em>.
+            </p>
+        </li>
+        <li class="paso-flujo col-md-6 col-lg-4">
+            <h3 class="h6">Identificar al aprobador</h3>
+            <p class="text-body-secondary mb-0">
+                El aprobador sale de una tabla de rangos configurable: Encargado de área, Gerencia o Junta
+                Directiva según el monto adjudicado.
+            </p>
+        </li>
+    </ol>
+</section>
+
+<section class="mb-5">
+    <h2 class="h4 mb-3">Conversión monetaria</h2>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="h6">Colones como fuente de verdad</h3>
+                    <p class="mb-0 text-body-secondary">
+                        Todos los montos se guardan en CRC con dos decimales exactos. Ninguna operación de la
+                        aplicación modifica esos valores para mostrarlos en otra moneda.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="h6">Dólares como referencia</h3>
+                    <p class="mb-0 text-body-secondary">
+                        El botón <strong>Ver en USD</strong> del menú convierte la vista usando
+                        <code>Monto CRC ÷ tipo de cambio</code>. El tipo de cambio se administra localmente,
+                        por lo que el sistema funciona sin conexión a Internet.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Licitaciones publicadas</h2>
+        <a class="btn btn-sm btn-outline-primary" asp-controller="Licitaciones" asp-action="Index">Ver todas</a>
+    </div>
+
+    @if (Model.LicitacionesPublicadas.Count == 0)
+    {
+        <p class="text-body-secondary">Todavía no hay licitaciones publicadas.</p>
+    }
+    else
+    {
+        <div class="tabla-desplazable">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Título</th>
+                        <th scope="col" class="columna-monto">Presupuesto</th>
+                        <th scope="col">Cierra</th>
+                        <th scope="col">Ofertas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (LicitacionDto licitacion in Model.LicitacionesPublicadas)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="Licitaciones" asp-action="Detalle" asp-route-id="@licitacion.Id">
+                                    @licitacion.Codigo
+                                </a>
+                            </td>
+                            <td>@licitacion.Titulo</td>
+                            <td class="columna-monto">@Html.Monto(licitacion.PresupuestoEstimadoCrc)</td>
+                            <td>@Html.FechaLocal(licitacion.FechaCierre)</td>
+                            <td>@licitacion.CantidadOfertas</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

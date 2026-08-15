@@ -1,0 +1,24 @@
+@model ProveedorDto
+@{
+    ViewData["Title"] = "Eliminar proveedor";
+}
+
+<h1 class="h3 mb-3">Eliminar proveedor</h1>
+
+<div class="alert alert-warning">
+    <p class="mb-1">
+        ¿Confirma la eliminación de <strong>@Model.Nombre</strong>?
+    </p>
+    <p class="mb-0 small">
+        Se aplica un borrado lógico: el proveedor deja de aparecer en los listados y no podrá presentar
+        ofertas nuevas, pero sus @Model.CantidadOfertas oferta(s) se conservan como evidencia.
+    </p>
+</div>
+
+<form method="post" asp-action="Eliminar" asp-route-id="@Model.Id"
+      data-confirmar="¿Eliminar el proveedor @Model.Nombre?">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+    </div>
+</form>

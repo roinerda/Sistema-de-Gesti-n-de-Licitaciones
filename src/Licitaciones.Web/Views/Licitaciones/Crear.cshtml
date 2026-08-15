@@ -1,0 +1,55 @@
+@model LicitacionFormularioVista
+@{
+    ViewData["Title"] = "Nueva licitación";
+}
+
+<h1 class="h3 mb-3">Nueva licitación</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        <form method="post" asp-action="Crear">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="Codigo"></label>
+                <input class="form-control" asp-for="Codigo" autofocus />
+                <span class="field-validation-valid" asp-validation-for="Codigo"></span>
+                <div class="form-text">Debe ser único. Se ignoran los espacios laterales y las mayúsculas.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="Titulo"></label>
+                <input class="form-control" asp-for="Titulo" />
+                <span class="field-validation-valid" asp-validation-for="Titulo"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="FechaCierreLocal"></label>
+                @* Control de calendario y hora del navegador; la hora se interpreta en zona America/Costa_Rica. *@
+                <input class="form-control" type="datetime-local" asp-for="FechaCierreLocal"
+                       value="@Model.FechaCierreLocal.ToString("yyyy-MM-ddTHH:mm")" />
+                <span class="field-validation-valid" asp-validation-for="FechaCierreLocal"></span>
+                <div class="form-text">Debe ser posterior al momento actual (hora de Costa Rica).</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="PresupuestoEstimadoCrc"></label>
+                <div class="input-group">
+                    <span class="input-group-text">₡</span>
+                    <input class="form-control" type="number" step="0.01" min="0.01" asp-for="PresupuestoEstimadoCrc" />
+                </div>
+                <span class="field-validation-valid" asp-validation-for="PresupuestoEstimadoCrc"></span>
+                <div class="form-text">Debe ser mayor que cero. Siempre se registra en colones.</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Crear en borrador</button>
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ScriptsValidacion" />
+}

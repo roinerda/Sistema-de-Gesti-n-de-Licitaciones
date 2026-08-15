@@ -1,0 +1,114 @@
+﻿@model PaginaResultado<LicitacionDto>
+@{
+    ViewData["Title"] = "Licitaciones";
+    var parametros = ViewData["Parametros"] as ParametrosConsultaLicitaciones ?? new ParametrosConsultaLicitaciones();
+    var paginacion = new PaginacionVista(Model.Pagina, Model.TotalPaginas, Model.TotalElementos, "Index");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Licitaciones</h1>
+    <a class="btn btn-primary" asp-action="Crear">Nueva licitación</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-sm-5 col-md-4">
+        <label class="form-label" for="Buscar">Buscar por código o título</label>
+        <input class="form-control" type="search" id="Buscar" name="Buscar" value="@parametros.Buscar" />
+    </div>
+    <div class="col-sm-3 col-md-2">
+        <label class="form-label" for="Estado">Estado</label>
+        <select class="form-select" id="Estado" name="Estado">
+            <option value="">Todos</option>
+            @foreach (EstadoLicitacion estado in Enum.GetValues<EstadoLicitacion>())
+            {
+                <option value="@estado" selected="@(parametros.Estado == estado)">@estado</option>
+            }
+        </select>
+    </div>
+    <div class="col-sm-4 col-md-3">
+        <label class="form-label" for="OrdenarPor">Ordenar por</label>
+        <select class="form-select" id="OrdenarPor" name="OrdenarPor">
+            <option value="fechacierre" selected="@(parametros.OrdenarPor is null or "fechacierre")">Fecha de cierre</option>
+            <option value="codigo" selected="@(parametros.OrdenarPor == "codigo")">Código</option>
+            <option value="titulo" selected="@(parametros.OrdenarPor == "titulo")">Título</option>
+            <option value="presupuesto" selected="@(parametros.OrdenarPor == "presupuesto")">Presupuesto</option>
+            <option value="estado" selected="@(parametros.OrdenarPor == "estado")">Estado</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="Descendente" name="Descendente" value="true"
+                   checked="@parametros.Descendente" />
+            <label class="form-check-label" for="Descendente">Descendente</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="IncluirEliminadas" name="IncluirEliminadas" value="true"
+                   checked="@parametros.IncluirEliminadas" />
+            <label class="form-check-label" for="IncluirEliminadas">Incluir eliminadas</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary" type="submit">Aplicar</button>
+    </div>
+</form>
+
+@if (Model.Elementos.Count == 0)
+{
+    <div class="alert alert-info">No hay licitaciones que coincidan con el filtro.</div>
+}
+else
+{
+    <div class="tabla-desplazable">
+        <table class="table table-hover align-middle">
+            <caption class="visually-hidden">Listado de licitaciones</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Título</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="columna-monto">Presupuesto</th>
+                    <th scope="col">Cierre</th>
+                    <th scope="col">Ofertas</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (LicitacionDto licitacion in Model.Elementos)
+                {
+                    <tr>
+                        <td><a asp-action="Detalle" asp-route-id="@licitacion.Id">@licitacion.Codigo</a></td>
+                        <td>@licitacion.Titulo</td>
+                        <td>
+                            <span class="badge estado-@licitacion.Estado.ToString().ToLowerInvariant()">
+                                @licitacion.EstadoDescripcion
+                            </span>
+                            @if (licitacion.CerradaFuncionalmente && licitacion.Estado == EstadoLicitacion.Publicada)
+                            {
+                                <span class="badge text-bg-warning" title="La fecha de cierre ya pasó: no admite más ofertas.">Vencida</span>
+                            }
+                            @if (licitacion.Eliminada)
+                            {
+                                <span class="badge estado-cerrada">Eliminada</span>
+                            }
+                        </td>
+                        <td class="columna-monto">@Html.Monto(licitacion.PresupuestoEstimadoCrc)</td>
+                        <td>@Html.FechaLocal(licitacion.FechaCierre)</td>
+                        <td>@licitacion.CantidadOfertas</td>
+                        <td class="text-end">
+                            @if (!licitacion.Eliminada && !licitacion.CerradaFuncionalmente)
+                            {
+                                <a class="btn btn-sm btn-outline-secondary" asp-action="Editar" asp-route-id="@licitacion.Id">Editar</a>
+                            }
+                            @if (!licitacion.Eliminada)
+                            {
+                                <a class="btn btn-sm btn-outline-danger" asp-action="Eliminar" asp-route-id="@licitacion.Id">Eliminar</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="paginacion" />
+}

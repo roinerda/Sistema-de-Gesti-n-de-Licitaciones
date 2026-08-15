@@ -1,0 +1,16 @@
+@* Mensajes de éxito y error que sobreviven a una redirección. *@
+@if (TempData[ControladorWebBase.ClaveMensajeExito] is string mensajeExito)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="status">
+        @mensajeExito
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}
+
+@if (TempData[ControladorWebBase.ClaveMensajeError] is string mensajeError)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @mensajeError
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+}

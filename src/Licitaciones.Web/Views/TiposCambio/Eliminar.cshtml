@@ -1,0 +1,24 @@
+@model TipoCambioDto
+@{
+    ViewData["Title"] = "Eliminar tipo de cambio";
+}
+
+<h1 class="h3 mb-3">Eliminar tipo de cambio</h1>
+
+<div class="alert alert-warning">
+    <p class="mb-1">
+        ¿Confirma la eliminación del tipo de cambio
+        <strong>@Model.CrcPorUsd.ToString("N4", ZonaHorariaCostaRica.Cultura) CRC por USD</strong>,
+        vigente desde el
+        @ZonaHorariaCostaRica.AHoraLocal(Model.FechaVigencia).ToString("dd/MM/yyyy", ZonaHorariaCostaRica.Cultura)?
+    </p>
+    <p class="mb-0 small">El tipo de cambio activo no puede eliminarse: primero active otro registro.</p>
+</div>
+
+<form method="post" asp-action="Eliminar" asp-route-id="@Model.Id"
+      data-confirmar="¿Eliminar este tipo de cambio?">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+    </div>
+</form>

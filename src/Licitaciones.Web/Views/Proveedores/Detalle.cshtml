@@ -1,0 +1,73 @@
+@model ProveedorDto
+@{
+    ViewData["Title"] = Model.Nombre;
+    var ofertas = ViewData["Ofertas"] as PaginaResultado<OfertaDto>;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">@Model.Nombre</h1>
+    <div class="d-flex gap-2">
+        @if (!Model.Eliminado)
+        {
+            <a class="btn btn-outline-secondary" asp-action="Editar" asp-route-id="@Model.Id">Editar</a>
+            <a class="btn btn-outline-danger" asp-action="Eliminar" asp-route-id="@Model.Id">Eliminar</a>
+        }
+        <a class="btn btn-outline-secondary" asp-action="Index">Volver</a>
+    </div>
+</div>
+
+@if (Model.Eliminado)
+{
+    <div class="alert alert-warning">
+        Este proveedor fue eliminado. Sus ofertas se conservan como evidencia, pero no puede presentar ofertas nuevas.
+    </div>
+}
+
+<dl class="row">
+    <dt class="col-sm-3">Nombre normalizado</dt>
+    <dd class="col-sm-9"><code>@Model.NombreNormalizado</code></dd>
+
+    <dt class="col-sm-3">Ofertas registradas</dt>
+    <dd class="col-sm-9">@Model.CantidadOfertas</dd>
+
+    <dt class="col-sm-3">Registrado</dt>
+    <dd class="col-sm-9">@Html.FechaLocal(Model.CreatedAt)</dd>
+
+    <dt class="col-sm-3">Última modificación</dt>
+    <dd class="col-sm-9">@Html.FechaLocal(Model.UpdatedAt)</dd>
+</dl>
+
+<h2 class="h5 mt-4 mb-3">Ofertas del proveedor</h2>
+
+@if (ofertas is null || ofertas.Elementos.Count == 0)
+{
+    <p class="text-body-secondary">Este proveedor todavía no ha presentado ofertas.</p>
+}
+else
+{
+    <div class="tabla-desplazable">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Licitación</th>
+                    <th scope="col" class="columna-monto">Monto ofertado</th>
+                    <th scope="col">Registrada</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (OfertaDto oferta in ofertas.Elementos)
+                {
+                    <tr>
+                        <td>
+                            <a asp-controller="Licitaciones" asp-action="Detalle" asp-route-id="@oferta.LicitacionId">
+                                @oferta.LicitacionCodigo
+                            </a>
+                        </td>
+                        <td class="columna-monto">@Html.Monto(oferta.MontoOfertadoCrc)</td>
+                        <td>@Html.FechaLocal(oferta.FechaRegistro)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,28 @@
+@model OfertaDto
+@{
+    ViewData["Title"] = "Eliminar oferta";
+}
+
+<h1 class="h3 mb-3">Eliminar oferta</h1>
+
+<div class="alert alert-warning">
+    <p class="mb-1">
+        ¿Confirma la eliminación de la oferta de <strong>@Model.ProveedorNombre</strong> por
+        <strong>@ZonaHorariaCostaRica.FormatearColones(Model.MontoOfertadoCrc)</strong> en la licitación
+        <strong>@Model.LicitacionCodigo</strong>?
+    </p>
+    <p class="mb-0 small">
+        Solo es posible mientras la licitación siga publicada y vigente. Las ofertas de licitaciones
+        cerradas o vencidas se conservan como evidencia.
+    </p>
+</div>
+
+<form method="post" asp-action="Eliminar" asp-route-id="@Model.Id"
+      data-confirmar="¿Eliminar la oferta de @Model.ProveedorNombre?">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+        <a class="btn btn-outline-secondary" asp-controller="Licitaciones" asp-action="Detalle" asp-route-id="@Model.LicitacionId">
+            Cancelar
+        </a>
+    </div>
+</form>

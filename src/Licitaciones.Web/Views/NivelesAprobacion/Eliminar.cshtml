@@ -1,0 +1,23 @@
+@model NivelAprobacionDto
+@{
+    ViewData["Title"] = "Eliminar nivel de aprobación";
+}
+
+<h1 class="h3 mb-3">Eliminar nivel de aprobación</h1>
+
+<div class="alert alert-warning">
+    <p class="mb-1">
+        ¿Confirma la eliminación del nivel <strong>@Model.Aprobador</strong>?
+    </p>
+    <p class="mb-0 small">
+        Los montos comprendidos en su rango dejarán de tener aprobador asignado hasta que configure otro nivel.
+    </p>
+</div>
+
+<form method="post" asp-action="Eliminar" asp-route-id="@Model.Id"
+      data-confirmar="¿Eliminar el nivel @Model.Aprobador?">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" type="submit">Sí, eliminar</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+    </div>
+</form>

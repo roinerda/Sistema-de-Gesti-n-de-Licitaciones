@@ -1,0 +1,41 @@
+@model PaginacionVista
+@{
+    // Se conservan los filtros actuales al cambiar de página: la consulta se reconstruye a partir
+    // de la cadena de consulta vigente, sustituyendo únicamente el número de página.
+    var consulta = Context.Request.Query
+        .Where(par => !string.Equals(par.Key, "Pagina", StringComparison.OrdinalIgnoreCase))
+        .ToDictionary(par => par.Key, par => par.Value.ToString());
+
+    string EnlacePagina(int pagina)
+    {
+        var parametros = new Dictionary<string, string>(consulta) { ["Pagina"] = pagina.ToString(ZonaHorariaCostaRica.Cultura) };
+        return Url.Action(Model.Accion, parametros.ToDictionary(p => p.Key, p => (object?)p.Value)) ?? "#";
+    }
+}
+
+@if (Model.TotalPaginas > 1)
+{
+    <nav aria-label="Paginación de resultados" class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span class="small text-body-secondary">
+            Página @Model.Pagina de @Model.TotalPaginas · @Model.TotalElementos registro(s)
+        </span>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(Model.Pagina <= 1 ? "disabled" : string.Empty)">
+                <a class="page-link" href="@EnlacePagina(Model.Pagina - 1)" aria-label="Página anterior">Anterior</a>
+            </li>
+            @for (int pagina = Math.Max(1, Model.Pagina - 2); pagina <= Math.Min(Model.TotalPaginas, Model.Pagina + 2); pagina++)
+            {
+                <li class="page-item @(pagina == Model.Pagina ? "active" : string.Empty)">
+                    <a class="page-link" href="@EnlacePagina(pagina)" aria-current="@(pagina == Model.Pagina ? "page" : null)">@pagina</a>
+                </li>
+            }
+            <li class="page-item @(Model.Pagina >= Model.TotalPaginas ? "disabled" : string.Empty)">
+                <a class="page-link" href="@EnlacePagina(Model.Pagina + 1)" aria-label="Página siguiente">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
+else
+{
+    <p class="small text-body-secondary mb-0">@Model.TotalElementos registro(s)</p>
+}

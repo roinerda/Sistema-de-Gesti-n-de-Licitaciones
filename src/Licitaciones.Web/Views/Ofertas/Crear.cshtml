@@ -1,0 +1,82 @@
+@model OfertaFormularioVista
+@{
+    ViewData["Title"] = "Registrar oferta";
+}
+
+<h1 class="h3 mb-3">Registrar oferta</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        @if (Model.Licitaciones.Count == 0)
+        {
+            <div class="alert alert-warning">
+                No hay licitaciones publicadas y vigentes. Publique una licitación antes de registrar ofertas.
+            </div>
+        }
+        else if (Model.Proveedores.Count == 0)
+        {
+            <div class="alert alert-warning">
+                No hay proveedores registrados.
+                <a asp-controller="Proveedores" asp-action="Crear">Registre uno primero</a>.
+            </div>
+        }
+        else
+        {
+            <form method="post" asp-action="Crear">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="LicitacionId">Licitación</label>
+                    <select class="form-select" id="LicitacionId" name="LicitacionId" required>
+                        <option value="">Seleccione una licitación</option>
+                        @foreach (LicitacionDto licitacion in Model.Licitaciones)
+                        {
+                            <option value="@licitacion.Id" selected="@(Model.Datos.LicitacionId == licitacion.Id)">
+                                @licitacion.Codigo — @licitacion.Titulo
+                                (presupuesto @ZonaHorariaCostaRica.FormatearColones(licitacion.PresupuestoEstimadoCrc))
+                            </option>
+                        }
+                    </select>
+                    <div class="form-text">Solo se listan licitaciones publicadas cuya fecha de cierre no ha pasado.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="ProveedorId">Proveedor</label>
+                    <select class="form-select" id="ProveedorId" name="ProveedorId" required>
+                        <option value="">Seleccione un proveedor</option>
+                        @foreach (ProveedorDto proveedor in Model.Proveedores)
+                        {
+                            <option value="@proveedor.Id" selected="@(Model.Datos.ProveedorId == proveedor.Id)">
+                                @proveedor.Nombre
+                            </option>
+                        }
+                    </select>
+                    <div class="form-text">Cada proveedor puede presentar una sola oferta por licitación.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="MontoOfertadoCrc">Monto ofertado (CRC)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">₡</span>
+                        <input class="form-control" type="number" step="0.01" min="0.01" required
+                               id="MontoOfertadoCrc" name="MontoOfertadoCrc"
+                               value="@(Model.Datos.MontoOfertadoCrc > 0 ? Model.Datos.MontoOfertadoCrc : null)" />
+                    </div>
+                    <div class="form-text">
+                        Debe ser mayor que cero y no puede superar el presupuesto. Una oferta igual al
+                        presupuesto es válida.
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">Registrar oferta</button>
+                    <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ScriptsValidacion" />
+}

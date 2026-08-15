@@ -1,0 +1,63 @@
+﻿@model PaginaResultado<NivelAprobacionDto>
+@{
+    ViewData["Title"] = "Niveles de aprobación";
+    var paginacion = new PaginacionVista(Model.Pagina, Model.TotalPaginas, Model.TotalElementos, "Index");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Niveles de aprobación</h1>
+    <a class="btn btn-primary" asp-action="Crear">Nuevo nivel</a>
+</div>
+
+<p class="text-body-secondary">
+    El aprobador de una adjudicación se obtiene de esta tabla según el monto de la mejor oferta. Los rangos
+    no pueden traslaparse y solo uno puede quedar sin monto máximo.
+</p>
+
+@if (Model.Elementos.Count == 0)
+{
+    <div class="alert alert-warning">
+        No hay niveles configurados: las licitaciones no mostrarán aprobador hasta que registre al menos uno.
+    </div>
+}
+else
+{
+    <div class="tabla-desplazable">
+        <table class="table table-hover align-middle">
+            <caption class="visually-hidden">Rangos de aprobación configurados</caption>
+            <thead>
+                <tr>
+                    <th scope="col" class="columna-monto">Monto mínimo</th>
+                    <th scope="col" class="columna-monto">Monto máximo</th>
+                    <th scope="col">Aprobador</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (NivelAprobacionDto nivel in Model.Elementos)
+                {
+                    <tr>
+                        <td class="columna-monto">@Html.Monto(nivel.MontoMinimoCrc)</td>
+                        <td class="columna-monto">
+                            @if (nivel.MontoMaximoCrc is { } maximo)
+                            {
+                                @Html.Monto(maximo)
+                            }
+                            else
+                            {
+                                <span class="text-body-secondary">Sin límite</span>
+                            }
+                        </td>
+                        <td>@nivel.Aprobador</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Editar" asp-route-id="@nivel.Id">Editar</a>
+                            <a class="btn btn-sm btn-outline-danger" asp-action="Eliminar" asp-route-id="@nivel.Id">Eliminar</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="paginacion" />
+}

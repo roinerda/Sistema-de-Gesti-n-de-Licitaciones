@@ -1,0 +1,94 @@
+﻿@model PaginaResultado<ProveedorDto>
+@{
+    ViewData["Title"] = "Proveedores";
+    var parametros = ViewData["Parametros"] as ParametrosConsultaProveedores ?? new ParametrosConsultaProveedores();
+    var paginacion = new PaginacionVista(Model.Pagina, Model.TotalPaginas, Model.TotalElementos, "Index");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Proveedores</h1>
+    <a class="btn btn-primary" asp-action="Crear">Nuevo proveedor</a>
+</div>
+
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-sm-5 col-md-4">
+        <label class="form-label" for="Buscar">Buscar por nombre</label>
+        <input class="form-control" type="search" id="Buscar" name="Buscar" value="@parametros.Buscar" />
+    </div>
+    <div class="col-sm-4 col-md-3">
+        <label class="form-label" for="OrdenarPor">Ordenar por</label>
+        <select class="form-select" id="OrdenarPor" name="OrdenarPor">
+            <option value="nombre" selected="@(parametros.OrdenarPor is null or "nombre")">Nombre</option>
+            <option value="creado" selected="@(parametros.OrdenarPor == "creado")">Fecha de registro</option>
+            <option value="actualizado" selected="@(parametros.OrdenarPor == "actualizado")">Última modificación</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="Descendente" name="Descendente" value="true"
+                   checked="@parametros.Descendente" />
+            <label class="form-check-label" for="Descendente">Descendente</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="IncluirEliminados" name="IncluirEliminados" value="true"
+                   checked="@parametros.IncluirEliminados" />
+            <label class="form-check-label" for="IncluirEliminados">Incluir eliminados</label>
+        </div>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary" type="submit">Aplicar</button>
+    </div>
+</form>
+
+@if (Model.Elementos.Count == 0)
+{
+    <div class="alert alert-info">No hay proveedores que coincidan con el filtro.</div>
+}
+else
+{
+    <div class="tabla-desplazable">
+        <table class="table table-hover align-middle">
+            <caption class="visually-hidden">Listado de proveedores registrados</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Ofertas</th>
+                    <th scope="col">Registrado</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (ProveedorDto proveedor in Model.Elementos)
+                {
+                    <tr>
+                        <td>
+                            <a asp-action="Detalle" asp-route-id="@proveedor.Id">@proveedor.Nombre</a>
+                        </td>
+                        <td>@proveedor.CantidadOfertas</td>
+                        <td>@Html.FechaLocal(proveedor.CreatedAt)</td>
+                        <td>
+                            @if (proveedor.Eliminado)
+                            {
+                                <span class="badge estado-cerrada">Eliminado</span>
+                            }
+                            else
+                            {
+                                <span class="badge estado-publicada">Vigente</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            @if (!proveedor.Eliminado)
+                            {
+                                <a class="btn btn-sm btn-outline-secondary" asp-action="Editar" asp-route-id="@proveedor.Id">Editar</a>
+                                <a class="btn btn-sm btn-outline-danger" asp-action="Eliminar" asp-route-id="@proveedor.Id">Eliminar</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Paginacion" model="paginacion" />
+}

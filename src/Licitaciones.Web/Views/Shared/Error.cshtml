@@ -1,0 +1,21 @@
+@model ErrorVista
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="text-center py-5">
+    <h1 class="display-6">Ocurrió un error inesperado</h1>
+    <p class="lead text-body-secondary">
+        No fue posible completar la operación. Vuelva a intentarlo; si el problema persiste, comunique el
+        identificador de la solicitud al equipo técnico.
+    </p>
+
+    @if (Model.MostrarIdentificador)
+    {
+        <p class="small">
+            Identificador de la solicitud: <code>@Model.IdentificadorSolicitud</code>
+        </p>
+    }
+
+    <a class="btn btn-primary" asp-controller="Inicio" asp-action="Index">Volver al inicio</a>
+</div>

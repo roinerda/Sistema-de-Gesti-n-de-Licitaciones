@@ -1,0 +1,111 @@
+@{
+    var crcPorUsd = ViewData[Licitaciones.Web.Filtros.FiltroTipoCambioActivo.ClaveCrcPorUsd] as decimal?;
+    var fechaTipoCambio = ViewData[Licitaciones.Web.Filtros.FiltroTipoCambioActivo.ClaveFechaTipoCambio] as DateTimeOffset?;
+}
+<!DOCTYPE html>
+@* El atributo data-bs-theme lo fija el script antes de pintar para evitar un destello de tema claro. *@
+<html lang="es-CR" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · Gestión de Licitaciones</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/sitio.css" asp-append-version="true" />
+    <script src="~/js/tema-inicial.js" asp-append-version="true"></script>
+</head>
+<body>
+    <a class="visually-hidden-focusable" href="#contenido">Saltar al contenido principal</a>
+
+    <header>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom shadow-sm">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" asp-controller="Inicio" asp-action="Index">
+                    <span aria-hidden="true">📋</span> Gestión de Licitaciones
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#menuPrincipal" aria-controls="menuPrincipal"
+                        aria-expanded="false" aria-label="Mostrar u ocultar el menú de navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="menuPrincipal">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Inicio" asp-action="Index">Inicio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Licitaciones" asp-action="Index">Licitaciones</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Proveedores" asp-action="Index">Proveedores</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Ofertas" asp-action="Index">Ofertas</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="NivelesAprobacion" asp-action="Index">Niveles de aprobación</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="TiposCambio" asp-action="Index">Tipo de cambio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/swagger" target="_blank" rel="noopener">API</a>
+                        </li>
+                    </ul>
+
+                    <div class="d-flex gap-2 align-items-center">
+                        <button id="botonMoneda" type="button" class="btn btn-outline-secondary btn-sm"
+                                aria-pressed="false"
+                                title="Alternar la visualización de montos entre colones y dólares">
+                            Ver en <span id="etiquetaMoneda">USD</span>
+                        </button>
+                        <button id="botonTema" type="button" class="btn btn-outline-secondary btn-sm"
+                                aria-pressed="false"
+                                title="Alternar entre modo claro y modo oscuro">
+                            <span id="etiquetaTema">Modo oscuro</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        @if (crcPorUsd is { } valor)
+        {
+            <div class="bg-body-secondary border-bottom">
+                <div class="container py-1 small text-body-secondary" id="avisoTipoCambio">
+                    Tipo de cambio aplicado: <strong>@valor.ToString("N4", ZonaHorariaCostaRica.Cultura)</strong> CRC por USD
+                    @if (fechaTipoCambio is { } fecha)
+                    {
+                        <text>· vigente desde el <strong>@ZonaHorariaCostaRica.AHoraLocal(fecha).ToString("dd/MM/yyyy", ZonaHorariaCostaRica.Cultura)</strong></text>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-warning-subtle border-bottom">
+                <div class="container py-1 small">
+                    No hay un tipo de cambio activo configurado: los montos solo pueden verse en colones.
+                    <a asp-controller="TiposCambio" asp-action="Crear">Registrar uno</a>.
+                </div>
+            </div>
+        }
+    </header>
+
+    <main id="contenido" class="container my-4">
+        <partial name="_Mensajes" />
+        @RenderBody()
+    </main>
+
+    <footer class="border-top mt-5 py-3 bg-body-tertiary">
+        <div class="container small text-body-secondary d-flex flex-wrap justify-content-between gap-2">
+            <span>Sistema de Gestión de Licitaciones · Moneda oficial: colón costarricense (CRC)</span>
+            <span>Universidad Técnica Nacional · ITI-822</span>
+        </div>
+    </footer>
+
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    <script src="~/js/sitio.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

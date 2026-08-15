@@ -1,0 +1,46 @@
+@model TipoCambioFormularioVista
+@{
+    ViewData["Title"] = "Nuevo tipo de cambio";
+}
+
+<h1 class="h3 mb-3">Nuevo tipo de cambio</h1>
+
+<div class="row">
+    <div class="col-lg-6">
+        <form method="post" asp-action="Crear">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="CrcPorUsd"></label>
+                <div class="input-group">
+                    <span class="input-group-text">₡ por US$</span>
+                    <input class="form-control" type="number" step="0.0001" min="0.0001" asp-for="CrcPorUsd" autofocus />
+                </div>
+                <span class="field-validation-valid" asp-validation-for="CrcPorUsd"></span>
+                <div class="form-text">Debe ser mayor que cero. Se usa como <code>Monto CRC ÷ tipo de cambio</code>.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="FechaVigenciaLocal"></label>
+                <input class="form-control" type="date" asp-for="FechaVigenciaLocal"
+                       value="@Model.FechaVigenciaLocal.ToString("yyyy-MM-dd")" />
+                <span class="field-validation-valid" asp-validation-for="FechaVigenciaLocal"></span>
+            </div>
+
+            <div class="form-check mb-3">
+                <input class="form-check-input" asp-for="Activo" />
+                <label class="form-check-label" asp-for="Activo"></label>
+                <div class="form-text">Al activarlo, el tipo de cambio activo anterior se desactiva automáticamente.</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+                <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ScriptsValidacion" />
+}
