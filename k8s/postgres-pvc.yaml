@@ -1,0 +1,20 @@
+# Volumen persistente de PostgreSQL.
+#
+# Se declara como PersistentVolumeClaim independiente, y no como volumeClaimTemplate
+# del StatefulSet, para que los datos sobrevivan incluso si el StatefulSet se elimina
+# y se vuelve a crear. Con una sola réplica del motor, esta es la forma más sencilla
+# de garantizar que la información no se pierda entre despliegues.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: licitaciones-postgres-datos
+  namespace: licitaciones
+  labels:
+    app.kubernetes.io/name: licitaciones
+    app.kubernetes.io/component: base-datos
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

@@ -1,0 +1,25 @@
+# Configuración no sensible de la aplicación.
+# Todo lo que sea credencial vive en el Secret, nunca aquí.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: licitaciones-config
+  namespace: licitaciones
+  labels:
+    app.kubernetes.io/name: licitaciones
+    app.kubernetes.io/component: aplicacion
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_HTTP_PORTS: "8080"
+  TZ: "America/Costa_Rica"
+
+  # Las migraciones se aplican al iniciar, protegidas por un bloqueo de aviso de
+  # PostgreSQL (pg_advisory_lock): con varias réplicas solo una migra y las demás
+  # esperan. La sonda de arranque da tiempo suficiente a que ese paso termine.
+  BaseDatos__AplicarMigracionesAlIniciar: "true"
+
+  # Datos de conexión que no son secretos. La contraseña llega desde el Secret y la
+  # cadena completa se arma en el Deployment.
+  BaseDatos__Host: "licitaciones-postgres"
+  BaseDatos__Puerto: "5432"
+  BaseDatos__Nombre: "licitaciones"

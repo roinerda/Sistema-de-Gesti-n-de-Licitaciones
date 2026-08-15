@@ -1,0 +1,32 @@
+# Servicio de la aplicación web y de la API REST.
+#
+# Se declara como ClusterIP porque la exposición externa depende del clúster
+# (Ingress, LoadBalancer o «kubectl port-forward»). Para probarlo en local:
+#   kubectl port-forward --namespace licitaciones service/licitaciones-web 8080:80
+apiVersion: v1
+kind: Service
+metadata:
+  name: licitaciones-web
+  namespace: licitaciones
+  labels:
+    app.kubernetes.io/name: licitaciones
+    app.kubernetes.io/component: aplicacion
+spec:
+  type: ClusterIP
+
+  # Afinidad por IP de cliente: los formularios MVC llevan un token antifalsificación
+  # firmado con el anillo de claves local de cada pod, de modo que una misma persona
+  # debe volver siempre al mismo. La API REST no depende de esta afinidad.
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+  selector:
+    app.kubernetes.io/name: licitaciones
+    app.kubernetes.io/component: aplicacion
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,143 @@
+# Aplicación web y API REST. Es un despliegue sin estado: toda la información vive
+# en PostgreSQL, por lo que las réplicas son intercambiables.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: licitaciones-web
+  namespace: licitaciones
+  labels:
+    app.kubernetes.io/name: licitaciones
+    app.kubernetes.io/component: aplicacion
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: licitaciones
+      app.kubernetes.io/component: aplicacion
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: licitaciones
+        app.kubernetes.io/component: aplicacion
+    spec:
+      securityContext:
+        # 1654 es el UID sin privilegios que traen las imágenes de .NET ($APP_UID).
+        runAsUser: 1654
+        runAsGroup: 1654
+        fsGroup: 1654
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          # Sustituya la etiqueta por la imagen publicada por la integración continua.
+          image: licitaciones-web:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: licitaciones-config
+          env:
+            # Kubernetes solo expande $(VAR) sobre variables declaradas antes en esta
+            # misma lista: las que llegan por envFrom no sirven para componer texto.
+            - name: BaseDatos__Host
+              valueFrom:
+                configMapKeyRef:
+                  name: licitaciones-config
+                  key: BaseDatos__Host
+            - name: BaseDatos__Puerto
+              valueFrom:
+                configMapKeyRef:
+                  name: licitaciones-config
+                  key: BaseDatos__Puerto
+            - name: BaseDatos__Nombre
+              valueFrom:
+                configMapKeyRef:
+                  name: licitaciones-config
+                  key: BaseDatos__Nombre
+            - name: BaseDatos__Usuario
+              valueFrom:
+                secretKeyRef:
+                  name: licitaciones-secret
+                  key: POSTGRES_USER
+            - name: BaseDatos__Clave
+              valueFrom:
+                secretKeyRef:
+                  name: licitaciones-secret
+                  key: POSTGRES_PASSWORD
+            # La cadena de conexión se compone en tiempo de ejecución a partir del
+            # ConfigMap y del Secret: en el repositorio nunca hay credenciales.
+            - name: ConnectionStrings__Licitaciones
+              value: "Host=$(BaseDatos__Host);Port=$(BaseDatos__Puerto);Database=$(BaseDatos__Nombre);Username=$(BaseDatos__Usuario);Password=$(BaseDatos__Clave);Include Error Detail=false"
+
+          # Sonda de arranque: cubre el tiempo de las migraciones. Mientras no pase,
+          # Kubernetes no evalúa las otras dos, de modo que un arranque lento nunca
+          # provoca un reinicio en bucle.
+          startupProbe:
+            httpGet:
+              path: /salud/vivo
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+
+          # Preparación: además del proceso, comprueba que la base de datos responde.
+          # Si PostgreSQL cae, el pod deja de recibir tráfico pero no se reinicia.
+          readinessProbe:
+            httpGet:
+              path: /salud/listo
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          # Vitalidad: solo mira el proceso. Reiniciar por una base de datos caída
+          # no arreglaría nada y agravaría la indisponibilidad.
+          livenessProbe:
+            httpGet:
+              path: /salud/vivo
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+
+          volumeMounts:
+            - name: temporal
+              mountPath: /tmp
+            - name: claves-proteccion
+              mountPath: /home/app/.aspnet/DataProtection-Keys
+
+      volumes:
+        # El sistema de archivos va de solo lectura; .NET necesita un directorio
+        # temporal con escritura.
+        - name: temporal
+          emptyDir: {}
+
+        # Anillo de claves de protección de datos, que firma los tokens antifalsificación
+        # de los formularios. Al ser local a cada pod, el Service usa afinidad por IP de
+        # cliente para que una misma persona vuelva siempre al mismo pod. Un despliegue
+        # con más carga debería compartir este anillo (volumen compartido o base de datos).
+        - name: claves-proteccion
+          emptyDir: {}
