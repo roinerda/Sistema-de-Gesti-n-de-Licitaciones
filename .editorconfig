@@ -2,7 +2,11 @@ root = true
 
 [*]
 charset = utf-8
-end_of_line = crlf
+
+# LF en todo el código fuente. Es lo que guarda Git y lo que ve la integración
+# continua en Linux, de modo que «dotnet format --verify-no-changes» da el mismo
+# resultado en cualquier equipo del proyecto.
+end_of_line = lf
 insert_final_newline = true
 indent_style = space
 indent_size = 4
@@ -45,6 +49,24 @@ dotnet_naming_symbols.tipos.applicable_kinds = class,struct,interface,enum,deleg
 dotnet_naming_symbols.tipos.applicable_accessibilities = *
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
+# Las constantes y los campos estáticos de solo lectura son valores compartidos, no estado
+# del objeto: llevan PascalCase. La regla va antes que la de campos privados porque solo se
+# aplica la primera que coincide.
+dotnet_naming_rule.constantes_pascal_case.severity = warning
+dotnet_naming_rule.constantes_pascal_case.symbols = constantes
+dotnet_naming_rule.constantes_pascal_case.style = pascal_case
+dotnet_naming_symbols.constantes.applicable_kinds = field
+dotnet_naming_symbols.constantes.applicable_accessibilities = *
+dotnet_naming_symbols.constantes.required_modifiers = const
+
+dotnet_naming_rule.estaticos_solo_lectura_pascal_case.severity = warning
+dotnet_naming_rule.estaticos_solo_lectura_pascal_case.symbols = estaticos_solo_lectura
+dotnet_naming_rule.estaticos_solo_lectura_pascal_case.style = pascal_case
+dotnet_naming_symbols.estaticos_solo_lectura.applicable_kinds = field
+dotnet_naming_symbols.estaticos_solo_lectura.applicable_accessibilities = *
+dotnet_naming_symbols.estaticos_solo_lectura.required_modifiers = static,readonly
+
+# El estado de instancia privado lleva guion bajo, para distinguirlo de un parámetro.
 dotnet_naming_rule.campos_privados_guion_bajo.severity = warning
 dotnet_naming_rule.campos_privados_guion_bajo.symbols = campos_privados
 dotnet_naming_rule.campos_privados_guion_bajo.style = guion_bajo_camel_case

@@ -1,4 +1,4 @@
-﻿using Licitaciones.Domain.Enumeraciones;
+using Licitaciones.Domain.Enumeraciones;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

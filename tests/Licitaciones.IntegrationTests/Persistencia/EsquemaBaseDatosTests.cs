@@ -1,6 +1,6 @@
 using Licitaciones.Domain.Enumeraciones;
-using Licitaciones.IntegrationTests.Comun;
 using Licitaciones.Infrastructure.Persistencia;
+using Licitaciones.IntegrationTests.Comun;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licitaciones.IntegrationTests.Persistencia;

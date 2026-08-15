@@ -1,7 +1,7 @@
 using Licitaciones.Application.Abstracciones;
 using Licitaciones.Domain.Entidades;
-using Licitaciones.IntegrationTests.Comun;
 using Licitaciones.Infrastructure.Persistencia;
+using Licitaciones.IntegrationTests.Comun;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licitaciones.IntegrationTests.Persistencia;

@@ -3,9 +3,9 @@ using Licitaciones.Application.Comun;
 using Licitaciones.Application.Dtos;
 using Licitaciones.Application.Servicios;
 using Licitaciones.Domain.Entidades;
-using Licitaciones.IntegrationTests.Comun;
 using Licitaciones.Infrastructure.Persistencia;
 using Licitaciones.Infrastructure.Persistencia.Repositorios;
+using Licitaciones.IntegrationTests.Comun;
 using Microsoft.EntityFrameworkCore;
 
 namespace Licitaciones.IntegrationTests.Persistencia;
