@@ -41,19 +41,8 @@ public static class EvaluadorOfertas
     /// <param name="mejorOfertaCrc">Monto de la mejor oferta en colones.</param>
     /// <returns>Porcentaje de ahorro redondeado a dos decimales.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Si el presupuesto no es mayor que cero.</exception>
-    public static decimal CalcularPorcentajeAhorro(decimal presupuestoCrc, decimal mejorOfertaCrc)
-    {
-        if (presupuestoCrc <= 0m)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(presupuestoCrc),
-                presupuestoCrc,
-                "El presupuesto debe ser mayor que cero para calcular el ahorro.");
-        }
-
-        decimal porcentaje = (presupuestoCrc - mejorOfertaCrc) / presupuestoCrc * 100m;
-        return decimal.Round(porcentaje, 2, MidpointRounding.AwayFromZero);
-    }
+    public static decimal CalcularPorcentajeAhorro(decimal presupuestoCrc, decimal mejorOfertaCrc) =>
+        decimal.Round(CalcularPorcentajeAhorroExacto(presupuestoCrc, mejorOfertaCrc), 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// Evalúa las ofertas de una licitación y devuelve mejor oferta, ahorro y clasificación.
@@ -70,8 +59,13 @@ public static class EvaluadorOfertas
             return new EvaluacionOfertas(null, 0m, ClasificacionOferta.SinOfertasValidas);
         }
 
-        decimal ahorro = CalcularPorcentajeAhorro(presupuestoCrc, mejor.MontoOfertadoCrc);
-        return new EvaluacionOfertas(mejor, ahorro, Clasificar(ahorro));
+        // La clasificación usa el ahorro exacto y la presentación el ahorro redondeado. Si se clasificara
+        // sobre el valor redondeado, un ahorro real pero minúsculo (por ejemplo ₡1 sobre ₡1 000 000) se
+        // redondearía a 0,00 % y quedaría marcado como «sin ahorro», contradiciendo la regla del enunciado.
+        decimal ahorroExacto = CalcularPorcentajeAhorroExacto(presupuestoCrc, mejor.MontoOfertadoCrc);
+        decimal ahorroPresentado = decimal.Round(ahorroExacto, 2, MidpointRounding.AwayFromZero);
+
+        return new EvaluacionOfertas(mejor, ahorroPresentado, Clasificar(ahorroExacto));
     }
 
     /// <summary>
@@ -85,4 +79,17 @@ public static class EvaluadorOfertas
         > 0m => ClasificacionOferta.OfertaAceptable,
         _ => ClasificacionOferta.OfertaValidaSinAhorro,
     };
+
+    private static decimal CalcularPorcentajeAhorroExacto(decimal presupuestoCrc, decimal mejorOfertaCrc)
+    {
+        if (presupuestoCrc <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(presupuestoCrc),
+                presupuestoCrc,
+                "El presupuesto debe ser mayor que cero para calcular el ahorro.");
+        }
+
+        return (presupuestoCrc - mejorOfertaCrc) / presupuestoCrc * 100m;
+    }
 }
