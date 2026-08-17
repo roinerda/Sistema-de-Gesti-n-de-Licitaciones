@@ -51,12 +51,18 @@ reproducible:
   aplicación solo con las pruebas unitarias.
 - **Manifiestos:** validados con un analizador de YAML en este equipo y con `kubeconform` en modo
   estricto en la integración continua.
-- **Pruebas de integración y funcionales:** compilan y se descubren correctamente (73 y 7 casos),
-  pero **no se ejecutaron en este equipo** por no haber Docker instalado. Se ejecutan en la
-  integración continua, que sí lo tiene.
+- **Pruebas de integración y funcionales:** **no se ejecutaron en este equipo** por no haber Docker
+  instalado. Se ejecutan en la integración continua, que sí lo tiene, y ahí pasan las 73 de
+  integración y los 7 recorridos de navegador.
+- **Sistema completo:** la integración continua construye la imagen, comprueba que no corre como
+  root, levanta el entorno con Docker Compose, verifica interfaz, API y OpenAPI, y confirma que los
+  datos sobreviven a un reinicio de los contenedores.
+- **Sin verificar:** el despliegue en un clúster de Kubernetes. Los manifiestos se validan con
+  `kubeconform` en modo estricto, pero nunca se aplicaron.
 
-Esa última línea es importante y se repite en [bitacora-xp.md](bitacora-xp.md) §4: declarar como
-verificado algo que no se ejecutó sería falso.
+La distinción importa: declarar como verificado algo que no se ejecutó sería falso. Y la primera
+ejecución real justificó la cautela — encontró dos defectos que la herramienta había introducido y
+que ninguna revisión de escritorio había detectado (§5).
 
 ## 5. Defectos que la herramienta introdujo y que las pruebas encontraron
 
@@ -70,6 +76,10 @@ Documentarlos es parte de la declaración honesta del uso.
 | Cinco vistas Razor con comillas anidadas dentro de un atributo. | Compilación. | Construcción del modelo movida al bloque de código de la vista. |
 | `.editorconfig` exigía CRLF mientras el repositorio guarda LF, con lo que la verificación de formato daba resultados distintos en Windows y en Linux. | `dotnet format --verify-no-changes`. | `style(codigo): unificar los finales de línea y la codificación` |
 | La regla de nomenclatura exigía guion bajo también a constantes y estáticos de solo lectura. | El mismo comando. | Reglas separadas por tipo de campo. |
+| Testcontainers 4.13.0 arrastraba SSH.NET 2025.1.0, con una vulnerabilidad de severidad alta. | `dotnet list package --vulnerable` en la integración continua. | `fix(ci)`: subir a Testcontainers 4.14.0. |
+| **La validación de nombres de proveedor era imposible de pasar en el navegador.** El patrón usa clases Unicode y JavaScript solo las reconoce con la marca `u`, que jquery-validation no aplica: el formulario rechazaba cualquier nombre real. | Prueba de navegador, en la primera ejecución real de la suite. | `fix(web)`: método de validación que compila con la marca `u`. |
+| **Los errores del servidor eran invisibles en el formulario de licitaciones**, porque el dominio nombra el campo `FechaCierre` y el formulario enlaza `FechaCierreLocal`. | La misma ejecución. | `fix(web)`: si la clave no está enlazada, el mensaje va al resumen. |
+| Una prueba afirmaba `409` al eliminar una licitación con ofertas, comportamiento que el sistema no implementa ni debe implementar. | La misma ejecución. | Prueba reescrita para verificar la regla real y documentación alineada. |
 
 ## 6. Conclusión
 

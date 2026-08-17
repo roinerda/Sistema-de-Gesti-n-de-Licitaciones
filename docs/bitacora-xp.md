@@ -171,22 +171,68 @@ de pruebas estaba verde antes y después.
 | `build(k8s): desplegar el sistema en Kubernetes con sondas y límites` | Ocho manifiestos con sondas diferenciadas. |
 | `style(codigo): unificar los finales de línea y la codificación` | Corrección detectada al preparar la verificación de formato. |
 | `ci(github): bloquear la integración ante cualquier fallo` | Flujo de cinco etapas más una de bloqueo. |
-| `docs: completar la documentación del proyecto` | El resto de `/docs`. |
+| `docs: completar la documentación del proyecto` | El resto de la documentación. |
+| `fix(ci): eliminar la dependencia vulnerable y hacer diagnosticables los fallos` | Testcontainers 4.14.0 y anotaciones desde los resultados de prueba. |
+| `fix(web): reparar dos defectos que las pruebas de navegador destaparon` | Validación Unicode en el cliente y errores de servidor visibles. |
+| `test(e2e)` ×2 | Diálogo de confirmación atendido y selectores sin ambigüedad. |
 
-### Verificación pendiente y por qué
+### Dónde se verificó cada cosa
 
-**Este equipo no tiene Docker instalado.** Las consecuencias, dichas sin adornos:
+**Este equipo no tiene Docker instalado**, así que dos de las tres suites nunca llegaron a ejecutarse
+aquí. Se ejecutaron por primera vez en la integración continua, al publicar el repositorio.
 
 | Suite | Compila | Se ejecutó localmente | Se ejecuta en integración continua |
 | ----- | ----- | ----- | ----- |
 | Unitarias (172) | Sí | Sí, 172 en verde | Sí |
-| Integración (73) | Sí | **No** | Sí |
-| Funcionales (7) | Sí | **No** | Sí |
+| Integración (73) | Sí | **No** | Sí, en verde |
+| Funcionales (7) | Sí | **No** | Sí, en verde |
 
-Lo mismo aplica a `docker compose up --build` y a `kubectl apply`: los archivos están escritos y
-validados sintácticamente —los manifiestos con un analizador de YAML y, en integración continua, con
-`kubeconform` en modo estricto contra el esquema de Kubernetes 1.30—, pero no se levantaron en este
-equipo.
+Lo mismo aplica a `docker compose up --build`: los archivos se escribieron y validaron
+sintácticamente aquí, pero el sistema se levantó por primera vez en la integración continua, que
+además comprueba que los datos sobreviven a un reinicio de los contenedores. Los manifiestos de
+Kubernetes se validan con `kubeconform` en modo estricto contra el esquema 1.30; **no se aplicaron
+en un clúster real**, ni aquí ni en la integración continua.
+
+### Lo que encontró la primera ejecución real
+
+Cuatro ejecuciones hicieron falta para llegar al verde, y cada una destapó algo que las 172 pruebas
+unitarias no podían ver. Vale la pena el detalle, porque es la mejor justificación de por qué el
+enunciado exige los tres niveles de prueba.
+
+| Ejecución | Qué falló | Causa |
+| ----- | ----- | ----- |
+| 1.ª | Revisión de dependencias y 5 pruebas | Testcontainers arrastraba SSH.NET con una vulnerabilidad alta; y un defecto de la aplicación bloqueaba todos los recorridos de navegador. |
+| 2.ª | 1 prueba de integración y 4 funcionales | Se veía por fin el detalle: dos defectos reales de la interfaz y una prueba que afirmaba un comportamiento inexistente. |
+| 3.ª | 1 prueba funcional | La licitación no se publicaba: el diálogo de confirmación quedaba sin atender. |
+| 4.ª | 1 prueba funcional | Un selector ambiguo resolvía a dos elementos. |
+| 5.ª | — | Las seis etapas en verde. |
+
+**El defecto más grave: nadie podía registrar un proveedor desde el navegador.** El patrón que exige
+el enunciado, `^[\p{L}\p{N} .,\(\)]+$`, usa clases Unicode. .NET las entiende de forma nativa, pero
+una expresión regular de JavaScript solo reconoce `\p{...}` cuando se compila con la marca `u`, y
+jquery-validation no la aplica. Sin ella, `\p` se lee como una «p» literal y la clase pasa a admitir
+apenas `p`, `L`, `N`, llaves, espacio, punto, coma y paréntesis: el formulario rechazaba
+«Constructora Alfa» y cualquier otro nombre real, mientras el servidor lo aceptaba sin problema.
+
+Ni las pruebas unitarias ni las de integración podían detectarlo, porque **ninguna pasa por
+JavaScript**. Solo un navegador de verdad lo ve. Se corrigió reemplazando el método de validación por
+uno que compila con la marca `u`; el patrón del servidor no cambió.
+
+**El segundo: los errores del servidor eran invisibles en el formulario de licitaciones.** El dominio
+nombra el campo `FechaCierre` y el formulario enlaza `FechaCierreLocal`, porque el navegador envía la
+fecha sin desplazamiento horario. El mensaje se agregaba al estado del modelo bajo una clave que
+ninguna vista muestra y desaparecía: la persona veía el formulario recargado, sin explicación. Ahora,
+si la clave no está enlazada, el mensaje cae al resumen de validación.
+
+**Y una prueba equivocada, no un defecto.** Afirmaba `409` al eliminar una licitación con ofertas,
+cuando el borrado es lógico y devuelve `204` precisamente para conservarlas como evidencia, que es lo
+que pide la sección 8.9. Se reescribió para verificar la regla real y se retiraron dos constantes de
+error que ninguna ruta usaba.
+
+Una lección de proceso además de las tres técnicas: los registros de una ejecución solo se descargan
+con autenticación, así que el primer fallo llegó sin ningún detalle. Se añadió un paso que convierte
+los resultados `.trx` en anotaciones, que sí son públicas. A partir de ahí cada ejecución dijo
+exactamente qué prueba fallaba y por qué.
 
 Por eso la etapa `imagen-de-contenedor` del flujo de integración no se limita a construir la imagen:
 levanta el sistema completo con Docker Compose, espera a la sonda de preparación, comprueba que la
@@ -240,9 +286,16 @@ dinero, claves foráneas con `RESTRICT`. También dejó claro que probar contra 
 un capricho del enunciado: los índices únicos parciales y las restricciones CHECK simplemente no
 existen en un sustituto en memoria.
 
-**Al cierre:** si hubiera una iteración 5, lo primero sería instalar Docker y ejecutar la batería
-completa localmente en lugar de depender de la integración continua para la primera ejecución real
-de 80 pruebas.
+**Al cierre:** la lección más cara fue dejar 80 pruebas sin ejecutar hasta el final. Compilaban, se
+descubrían y parecían correctas, pero «compila» no es «funciona»: al correrlas de verdad aparecieron
+dos defectos reales de la interfaz, uno de ellos capaz de impedir el uso más básico del sistema. Si
+hubiera una iteración 5, lo primero sería instalar Docker y ejecutar la batería completa en cada
+entrega, no al final.
+
+La segunda lección es sobre el propio ciclo de retroalimentación. Un fallo de integración continua
+que no dice qué falló obliga a adivinar, y adivinar produce correcciones a ciegas. Media hora
+invertida en convertir los resultados de prueba en anotaciones legibles ahorró varias rondas de
+prueba y error, y esa mejora queda en el flujo para cualquier fallo futuro.
 
 ---
 
